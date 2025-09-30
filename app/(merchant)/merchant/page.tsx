@@ -30,7 +30,7 @@ export default function MerchantDashboardComponent() {
       try {
         const [dashboardData, campaignsData] = await Promise.all([getMerchantDashboard(), getMerchantCampaigns()])
         setDashboard(dashboardData)
-        setCampaigns(campaignsData.slice(0, 3)) // Show only top 3 campaigns
+        setCampaigns((Array.isArray(campaignsData) ? campaignsData.filter(Boolean) : []).slice(0, 3))
       } catch (error) {
         console.error("Failed to load dashboard data:", error)
       } finally {
@@ -63,6 +63,16 @@ export default function MerchantDashboardComponent() {
       </div>
     )
   }
+
+  const safeCampaigns = Array.isArray(campaigns) ? campaigns.filter(Boolean) : []
+  const campaignChartData = safeCampaigns.map((c) => {
+    const rawName = typeof c?.name === "string" ? c.name : "Unnamed"
+    const displayName = rawName.length > 15 ? `${rawName.slice(0, 15)}...` : rawName
+    return {
+      name: displayName,
+      conversions: typeof c?.conversions === "number" ? c.conversions : 0,
+    }
+  })
 
   return (
     <div className="space-y-6">
@@ -166,9 +176,7 @@ export default function MerchantDashboardComponent() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart
-                data={campaigns.map((c) => ({ name: c.name.slice(0, 15) + "...", conversions: c.conversions }))}
-              >
+              <BarChart data={campaignChartData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
@@ -193,58 +201,68 @@ export default function MerchantDashboardComponent() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {campaigns.map((campaign) => (
-              <div key={campaign.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="font-medium">{campaign.name}</h3>
-                    <Badge
-                      variant={
-                        campaign.status === "active"
-                          ? "default"
-                          : campaign.status === "paused"
-                            ? "secondary"
-                            : "outline"
-                      }
-                    >
-                      {campaign.status}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                    <span>Messages: {campaign.messagesSent.toLocaleString()}</span>
-                    <span>Conversions: {campaign.conversions}</span>
-                    <span>Rate: {((campaign.conversions / campaign.messagesSent) * 100).toFixed(1)}%</span>
-                  </div>
-                  <div className="mt-2">
-                    <div className="flex items-center justify-between text-xs mb-1">
-                      <span>Progress</span>
-                      <span>{Math.round((campaign.messagesSent / 10000) * 100)}%</span>
+            {safeCampaigns.map((campaign) => {
+              const messagesSent = typeof campaign.messagesSent === "number" ? campaign.messagesSent : 0
+              const conversions = typeof campaign.conversions === "number" ? campaign.conversions : 0
+              const conversionRate = messagesSent > 0 ? ((conversions / messagesSent) * 100).toFixed(1) : "0.0"
+              const progress = Math.min(100, messagesSent > 0 ? (messagesSent / 10000) * 100 : 0)
+
+              return (
+                <div
+                  key={campaign.id ?? campaign.name ?? Math.random().toString(36).slice(2)}
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="font-medium">{campaign.name ?? "Unnamed"}</h3>
+                      <Badge
+                        variant={
+                          campaign.status === "active"
+                            ? "default"
+                            : campaign.status === "paused"
+                              ? "secondary"
+                              : "outline"
+                        }
+                      >
+                        {campaign.status ?? "draft"}
+                      </Badge>
                     </div>
-                    <Progress value={(campaign.messagesSent / 10000) * 100} className="h-2" />
+                    <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                      <span>Messages: {messagesSent.toLocaleString()}</span>
+                      <span>Conversions: {conversions}</span>
+                      <span>Rate: {conversionRate}%</span>
+                    </div>
+                    <div className="mt-2">
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span>Progress</span>
+                        <span>{Math.round(progress)}%</span>
+                      </div>
+                      <Progress value={progress} className="h-2" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 ml-4">
+                    <Button variant="ghost" size="icon">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>Duplicate</DropdownMenuItem>
+                        <DropdownMenuItem>Archive</DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 ml-4">
-                  <Button variant="ghost" size="icon">
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>Duplicate</DropdownMenuItem>
-                      <DropdownMenuItem>Archive</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </CardContent>
       </Card>

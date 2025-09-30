@@ -7,24 +7,44 @@
 
 ## Overview
 
-This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).
+This repository now hosts both the Next.js frontend and a multi-tenant backend platform powering the OndeClick Promo marketplace. The backend is implemented in Node.js/TypeScript with Fastify, Supabase, BullMQ, OpenAI, Meta Ads, WhatsApp, n8n and Stripe adapters.
 
-## Deployment
+## Backend Service (`backend/`)
 
-Your project is live at:
+### Features
 
-**[https://vercel.com/igor-barros-projects/v0-one-click-promo-frontend](https://vercel.com/igor-barros-projects/v0-one-click-promo-frontend)**
+- Multi-tenant Supabase schema with RLS-friendly repositories and tenant-aware services
+- Campaign engine with AI-assisted preparation, queue-driven publishing, Meta and WhatsApp adapters, and worker consumers
+- Light CRM (leads, events, bulk re-engagement) with n8n automation hooks
+- Integrations for Meta OAuth, WhatsApp, OpenAI, Stripe billing and n8n automations
+- Observability via Pino logging and OpenTelemetry (OTLP exporter)
 
-## Build your app
+### Getting Started
 
-Continue building your app on:
+```bash
+pnpm install
+cp .env.example .env.development # adjust values
+pnpm build:backend
+pnpm start:backend
 
-**[https://v0.app/chat/projects/KCCQWpBz84M](https://v0.app/chat/projects/KCCQWpBz84M)**
+# in another terminal for queue consumers
+pnpm start:worker
+```
 
-## How It Works
+- Development env variables live in `.env.development`; production secrets belong in `.env.production` and Coolify env groups.
+- `pnpm seed:backend` creates a demo tenant, campaign and lead for local testing.
+- REST API base path: `http://localhost:4000/api`. Health check: `/api/health`.
 
-1. Create and modify your project using [v0.app](https://v0.app)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+### Testing
+
+```bash
+pnpm test:backend
+```
+
+### Docker
+
+See `backend/Dockerfile` (api) and `backend/Dockerfile.worker` (worker) for Coolify-ready images. Build args target Node.js 20 Alpine.
+
+## Frontend Deployment
+
+The existing frontend remains live at **[https://vercel.com/igor-barros-projects/v0-one-click-promo-frontend](https://vercel.com/igor-barros-projects/v0-one-click-promo-frontend)** and continues syncing through [v0.app](https://v0.app).

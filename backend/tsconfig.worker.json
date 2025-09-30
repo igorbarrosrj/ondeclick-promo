@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.base.json",
+  "include": [
+    "src/worker.ts",
+    "src/workers/**/*.ts",
+    "src/queues/**/*.ts",
+    "src/config/**/*.ts",
+    "src/core/**/*.ts",
+    "src/services/**/*.ts",
+    "src/repositories/**/*.ts",
+    "src/utils/**/*.ts",
+    "src/types/**/*.ts",
+    "src/**/*.d.ts"
+  ],
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/tests/**"
+  ]
+}
