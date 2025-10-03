@@ -15,6 +15,8 @@ import { N8nClient } from '@clients/n8n-client';
 import { SupabaseServiceClient } from '@config/supabase';
 import { RedisClient } from '@config/redis';
 import { Logger } from 'pino';
+import { AdminService } from '@services/admin-service';
+import { AffiliateService } from '@services/affiliate-service';
 
 export const TOKENS = {
   env: createToken<AppEnv>('env'),
@@ -28,6 +30,8 @@ export const TOKENS = {
   integrationService: createToken<IntegrationService>('integrationService'),
   kpiService: createToken<KpiService>('kpiService'),
   billingService: createToken<BillingService>('billingService'),
+  adminService: createToken<AdminService>('adminService'),
+  affiliateService: createToken<AffiliateService>('affiliateService'),
   openAiService: createToken<OpenAIService>('openAiService'),
   queueService: createToken<QueueService>('queueService'),
   metaAdapter: createToken<MetaAdapter>('metaAdapter'),

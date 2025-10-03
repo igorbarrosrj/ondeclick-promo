@@ -25,6 +25,8 @@ import {
   QUEUE_REENGAGE,
   QUEUE_WHATSAPP_SEND
 } from '@queues/queue-names';
+import { AdminService } from '@services/admin-service';
+import { AffiliateService } from '@services/affiliate-service';
 
 let cachedContainer: Container | null = null;
 
@@ -69,6 +71,8 @@ export function getBackendContainer() {
   const integrationService = new IntegrationService(repository, metaAdapter, whatsappAdapter, n8nClient, env);
   const kpiService = new KpiService(repository);
   const billingService = new BillingService(env, repository, n8nClient);
+  const adminService = new AdminService(repository);
+  const affiliateService = new AffiliateService(repository, queueService, openAiService);
 
   container.registerValue(TOKENS.tenantService, tenantService);
   container.registerValue(TOKENS.campaignService, campaignService);
@@ -76,6 +80,8 @@ export function getBackendContainer() {
   container.registerValue(TOKENS.integrationService, integrationService);
   container.registerValue(TOKENS.kpiService, kpiService);
   container.registerValue(TOKENS.billingService, billingService);
+  container.registerValue(TOKENS.adminService, adminService);
+  container.registerValue(TOKENS.affiliateService, affiliateService);
 
   cachedContainer = container;
   return container;

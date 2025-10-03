@@ -16,11 +16,13 @@ export interface QueuePayloads {
     tenantId: string;
     campaignId: string;
     channels: string[];
+    affiliateId?: string;
   };
   [QUEUE_WHATSAPP_SEND]: {
     tenantId: string;
     campaignId: string;
     audience: Array<Record<string, unknown>>;
+    affiliateId?: string;
   };
   [QUEUE_AI_GENERATE]: {
     tenantId: string;

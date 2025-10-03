@@ -11,7 +11,7 @@ export interface Tenant {
   created_at: string;
 }
 
-export type Role = 'owner' | 'admin' | 'member';
+export type Role = 'owner' | 'admin' | 'member' | 'affiliate';
 
 export interface Membership {
   id: UUID;
@@ -110,6 +110,8 @@ export interface Event {
   tenant_id: UUID;
   lead_id: UUID | null;
   campaign_id: UUID | null;
+  affiliate_campaign_id?: UUID | null;
+  affiliate_id?: UUID | null;
   channel: string | null;
   type: EventType;
   payload: Record<string, unknown> | null;
@@ -153,4 +155,65 @@ export interface Database {
   leads: Lead;
   events: Event;
   billing_usage: BillingUsage;
+  affiliate_profiles: AffiliateProfile;
+  affiliate_campaigns: AffiliateCampaign;
+  affiliate_assets: AffiliateAsset;
+  support_messages: SupportMessage;
+  plan_subscriptions: PlanSubscription;
+}
+
+export interface AffiliateProfile {
+  id: UUID;
+  user_id: UUID;
+  display_name: string | null;
+  payout_method: string | null;
+  payout_details: Record<string, unknown> | null;
+  plan: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AffiliateCampaign {
+  id: UUID;
+  affiliate_id: UUID;
+  tenant_id: UUID | null;
+  name: string;
+  description: string | null;
+  status: CampaignStatus;
+  offer: Record<string, unknown> | null;
+  channels: string[];
+  budget: number | null;
+  scheduled_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AffiliateAsset {
+  id: UUID;
+  affiliate_campaign_id: UUID;
+  type: string;
+  url: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface SupportMessage {
+  id: UUID;
+  tenant_id: UUID;
+  user_id: UUID | null;
+  sender_type: 'tenant' | 'admin';
+  subject: string | null;
+  body: string;
+  status: 'open' | 'pending' | 'closed';
+  created_at: string;
+}
+
+export interface PlanSubscription {
+  id: UUID;
+  affiliate_id: UUID;
+  plan_code: string;
+  status: 'active' | 'past_due' | 'canceled';
+  started_at: string;
+  current_period_end: string | null;
+  metadata: Record<string, unknown> | null;
 }
