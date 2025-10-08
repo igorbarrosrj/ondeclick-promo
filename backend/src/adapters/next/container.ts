@@ -25,6 +25,11 @@ import {
   QUEUE_REENGAGE,
   QUEUE_WHATSAPP_SEND
 } from '@queues/queue-names';
+import { AdminService } from '@services/admin-service';
+import { AffiliateService } from '@services/affiliate-service';
+import { MercadoPagoService } from '@services/mercadopago-service';
+import { WhatsAppAuthService } from '@services/whatsapp-auth-service';
+import { AdGroupService } from '@services/ad-group-service';
 
 let cachedContainer: Container | null = null;
 
@@ -69,6 +74,11 @@ export function getBackendContainer() {
   const integrationService = new IntegrationService(repository, metaAdapter, whatsappAdapter, n8nClient, env);
   const kpiService = new KpiService(repository);
   const billingService = new BillingService(env, repository, n8nClient);
+  const adminService = new AdminService(repository);
+  const affiliateService = new AffiliateService(repository, queueService, openAiService);
+  const mercadoPagoService = new MercadoPagoService(env, repository, n8nClient);
+  const whatsappAuthService = new WhatsAppAuthService(env, repository, n8nClient);
+  const adGroupService = new AdGroupService(env, repository, n8nClient);
 
   container.registerValue(TOKENS.tenantService, tenantService);
   container.registerValue(TOKENS.campaignService, campaignService);
@@ -76,6 +86,11 @@ export function getBackendContainer() {
   container.registerValue(TOKENS.integrationService, integrationService);
   container.registerValue(TOKENS.kpiService, kpiService);
   container.registerValue(TOKENS.billingService, billingService);
+  container.registerValue(TOKENS.adminService, adminService);
+  container.registerValue(TOKENS.affiliateService, affiliateService);
+  container.registerValue(TOKENS.mercadoPagoService, mercadoPagoService);
+  container.registerValue(TOKENS.whatsappAuthService, whatsappAuthService);
+  container.registerValue(TOKENS.adGroupService, adGroupService);
 
   cachedContainer = container;
   return container;

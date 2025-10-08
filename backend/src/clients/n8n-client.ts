@@ -31,6 +31,10 @@ export class N8nClient {
     return response.ok;
   }
 
+  async sendWebhook(url: string, payload: Record<string, unknown>) {
+    return this.post(url, payload);
+  }
+
   private async post(url: string, body: unknown) {
     return withRetry(
       async () => {

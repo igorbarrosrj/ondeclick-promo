@@ -1,13 +1,19 @@
 import { SupabaseServiceClient } from '@config/supabase';
 import { generateId } from '@utils/ids';
 import {
+  AffiliateAsset,
+  AffiliateCampaign,
+  AffiliateProfile,
   BillingUsage,
   Campaign,
   CampaignKpiRow,
   Event,
+  EventType,
   Integration,
   Lead,
   Membership,
+  PlanSubscription,
+  SupportMessage,
   TenantKpiRow,
   Tenant,
   TenantPage,
@@ -404,5 +410,285 @@ export class SupabaseRepository {
 
     handleSupabaseError(error);
     return (data ?? []) as CampaignKpiRow[];
+  }
+
+  async getAdminTenantSummaries() {
+    const { data, error } = await this.client.from('admin_tenant_summary_view').select('*');
+    handleSupabaseError(error);
+    return data ?? [];
+  }
+
+  async listSupportMessages(filters: { tenantId?: UUID; status?: string } = {}) {
+    let query = this.client.from('support_messages').select('*').order('created_at', { ascending: false });
+    if (filters.tenantId) query = query.eq('tenant_id', filters.tenantId);
+    if (filters.status) query = query.eq('status', filters.status);
+    const { data, error } = await query;
+    handleSupabaseError(error);
+    return (data ?? []) as SupportMessage[];
+  }
+
+  async upsertSupportMessage(payload: Partial<SupportMessage> & { id?: UUID }) {
+    const { data, error } = await this.client
+      .from('support_messages')
+      .upsert({
+        id: payload.id ?? generateId(),
+        ...payload
+      })
+      .select()
+      .single();
+
+    handleSupabaseError(error);
+    return data as SupportMessage;
+  }
+
+  async getAffiliateProfileByUser(userId: UUID): Promise<AffiliateProfile | null> {
+    const { data, error } = await this.client
+      .from('affiliate_profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+    handleSupabaseError(error);
+    return (data as AffiliateProfile) ?? null;
+  }
+
+  async upsertAffiliateProfile(payload: Partial<AffiliateProfile> & { user_id: UUID }) {
+    const { data, error } = await this.client
+      .from('affiliate_profiles')
+      .upsert({
+        id: payload.id ?? generateId(),
+        ...payload
+      })
+      .select()
+      .single();
+    handleSupabaseError(error);
+    return data as AffiliateProfile;
+  }
+
+  async createAffiliateCampaign(payload: {
+    affiliate_id: UUID;
+    tenant_id?: UUID | null;
+    name: string;
+    description?: string;
+    offer?: Record<string, unknown>;
+    channels?: string[];
+    budget?: number;
+    scheduled_at?: string;
+  }): Promise<AffiliateCampaign> {
+    const { data, error } = await this.client
+      .from('affiliate_campaigns')
+      .insert({
+        id: generateId(),
+        status: 'draft',
+        ...payload,
+        channels: payload.channels ?? []
+      })
+      .select()
+      .single();
+
+    handleSupabaseError(error);
+    return data as AffiliateCampaign;
+  }
+
+  async listAffiliateCampaigns(affiliateId: UUID): Promise<AffiliateCampaign[]> {
+    const { data, error } = await this.client
+      .from('affiliate_campaigns')
+      .select('*')
+      .eq('affiliate_id', affiliateId)
+      .order('created_at', { ascending: false });
+    handleSupabaseError(error);
+    return (data ?? []) as AffiliateCampaign[];
+  }
+
+  async updateAffiliateCampaign(campaignId: UUID, affiliateId: UUID, patch: Partial<AffiliateCampaign>) {
+    const { data, error } = await this.client
+      .from('affiliate_campaigns')
+      .update({ ...patch, updated_at: new Date().toISOString() })
+      .eq('id', campaignId)
+      .eq('affiliate_id', affiliateId)
+      .select()
+      .single();
+    handleSupabaseError(error);
+    if (!data) {
+      throw new NotFoundError('Affiliate campaign not found');
+    }
+    return data as AffiliateCampaign;
+  }
+
+  async getAffiliateCampaign(campaignId: UUID, affiliateId: UUID): Promise<AffiliateCampaign | null> {
+    const { data, error } = await this.client
+      .from('affiliate_campaigns')
+      .select('*')
+      .eq('id', campaignId)
+      .eq('affiliate_id', affiliateId)
+      .maybeSingle();
+    handleSupabaseError(error);
+    return (data as AffiliateCampaign) ?? null;
+  }
+
+  async insertAffiliateAsset(payload: {
+    affiliate_campaign_id: UUID;
+    type: string;
+    url?: string;
+    metadata?: Record<string, unknown>;
+  }) {
+    const { data, error } = await this.client
+      .from('affiliate_assets')
+      .insert({
+        id: generateId(),
+        metadata: payload.metadata ?? null,
+        ...payload
+      })
+      .select()
+      .single();
+    handleSupabaseError(error);
+    return data as AffiliateAsset;
+  }
+
+  async listAffiliateAssets(campaignId: UUID) {
+    const { data, error } = await this.client
+      .from('affiliate_assets')
+      .select('*')
+      .eq('affiliate_campaign_id', campaignId)
+      .order('created_at', { ascending: false });
+    handleSupabaseError(error);
+    return (data ?? []) as AffiliateAsset[];
+  }
+
+  async getAffiliateSubscription(affiliateId: UUID): Promise<PlanSubscription | null> {
+    const { data, error } = await this.client
+      .from('plan_subscriptions')
+      .select('*')
+      .eq('affiliate_id', affiliateId)
+      .maybeSingle();
+    handleSupabaseError(error);
+    return (data as PlanSubscription) ?? null;
+  }
+
+  async upsertPlanSubscription(payload: Partial<PlanSubscription> & { affiliate_id: UUID }) {
+    const { data, error } = await this.client
+      .from('plan_subscriptions')
+      .upsert({
+        id: payload.id ?? generateId(),
+        ...payload
+      })
+      .select()
+      .single();
+    handleSupabaseError(error);
+    return data as PlanSubscription;
+  }
+
+  async recordAffiliateEvent(payload: Partial<Event> & { affiliate_id: UUID; type: EventType }) {
+    const { data, error } = await this.client
+      .from('events')
+      .insert({ id: generateId(), ...payload })
+      .select()
+      .single();
+    handleSupabaseError(error);
+    return data as Event;
+  }
+
+  async createSubscription(payload: {
+    tenant_id: string;
+    plan_code: string;
+    plan_name: string;
+    status: string;
+    payment_provider: string;
+    payment_provider_id: string;
+    payment_provider_data?: Record<string, any>;
+  }): Promise<PlanSubscription> {
+    const { data, error } = await this.client
+      .from('plan_subscriptions')
+      .insert({
+        id: generateId(),
+        ...payload,
+      })
+      .select()
+      .single();
+    handleSupabaseError(error);
+    return data as PlanSubscription;
+  }
+
+  async updateSubscriptionByTenantId(
+    tenantId: string,
+    patch: {
+      status?: string;
+      payment_provider_data?: Record<string, any>;
+      current_period_end?: string;
+    }
+  ): Promise<void> {
+    const { error } = await this.client
+      .from('plan_subscriptions')
+      .update(patch)
+      .eq('tenant_id', tenantId);
+    handleSupabaseError(error);
+  }
+
+  async getTenantByWhatsApp(whatsappNumber: string): Promise<Tenant | null> {
+    const { data, error } = await this.client
+      .from('tenants')
+      .select('*')
+      .eq('whatsapp_number', whatsappNumber)
+      .maybeSingle();
+    handleSupabaseError(error);
+    return (data as Tenant) ?? null;
+  }
+
+  async updateTenantWhatsApp(
+    tenantId: string,
+    updates: {
+      whatsapp_verified?: boolean;
+      whatsapp_verification_token?: string | null;
+    }
+  ): Promise<void> {
+    const { error } = await this.client
+      .from('tenants')
+      .update(updates)
+      .eq('id', tenantId);
+    handleSupabaseError(error);
+  }
+
+  async createAdGroup(payload: {
+    tenant_id: string;
+    campaign_id: string;
+    name: string;
+    description?: string;
+    whatsapp_group_id?: string;
+    whatsapp_group_invite_link?: string;
+  }): Promise<any> {
+    const { data, error } = await this.client
+      .from('ad_groups')
+      .insert({
+        id: generateId(),
+        ...payload,
+      })
+      .select()
+      .single();
+    handleSupabaseError(error);
+    return data;
+  }
+
+  async updateAdGroup(
+    adGroupId: string,
+    updates: {
+      whatsapp_group_id?: string;
+      whatsapp_group_invite_link?: string;
+      status?: string;
+    }
+  ): Promise<void> {
+    const { error } = await this.client
+      .from('ad_groups')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', adGroupId);
+    handleSupabaseError(error);
+  }
+
+  async getAdGroupsByCampaign(campaignId: string): Promise<any[]> {
+    const { data, error } = await this.client
+      .from('ad_groups')
+      .select('*')
+      .eq('campaign_id', campaignId)
+      .order('created_at', { ascending: false });
+    handleSupabaseError(error);
+    return data ?? [];
   }
 }

@@ -11,3 +11,15 @@ export async function requireAuth(request: FastifyRequest, reply: FastifyReply) 
     return reply;
   }
 }
+
+export function assertRole(request: FastifyRequest, roles: string[]) {
+  const auth = request.auth;
+  if (!auth) {
+    throw new ApplicationError('Unauthorized', 401);
+  }
+
+  const hasRole = auth.roles?.some((role) => roles.includes(role));
+  if (!hasRole) {
+    throw new ApplicationError('Forbidden', 403);
+  }
+}
