@@ -18,6 +18,9 @@ import { registerBillingRoutes } from '@modules/billing/routes';
 import { registerWebhookRoutes } from '@modules/webhooks/routes';
 import { registerAdminRoutes } from '@modules/admin/routes';
 import { registerAffiliateRoutes } from '@modules/affiliates/routes';
+import { registerWhatsAppAuthRoutes } from '@modules/whatsapp-auth/routes';
+import { registerMercadoPagoRoutes } from '@modules/mercadopago/routes';
+import { registerAdGroupRoutes } from '@modules/ad-groups/routes';
 
 export async function buildApp(container: Container) {
   const env = container.resolve(TOKENS.env);
@@ -74,6 +77,9 @@ export async function buildApp(container: Container) {
   await app.register(registerWebhookRoutes);
   await app.register(registerAdminRoutes);
   await app.register(registerAffiliateRoutes);
+  await app.register(registerWhatsAppAuthRoutes);
+  await app.register(registerMercadoPagoRoutes);
+  await app.register(registerAdGroupRoutes);
 
   return app;
 }

@@ -586,4 +586,109 @@ export class SupabaseRepository {
     handleSupabaseError(error);
     return data as Event;
   }
+
+  async createSubscription(payload: {
+    tenant_id: string;
+    plan_code: string;
+    plan_name: string;
+    status: string;
+    payment_provider: string;
+    payment_provider_id: string;
+    payment_provider_data?: Record<string, any>;
+  }): Promise<PlanSubscription> {
+    const { data, error } = await this.client
+      .from('plan_subscriptions')
+      .insert({
+        id: generateId(),
+        ...payload,
+      })
+      .select()
+      .single();
+    handleSupabaseError(error);
+    return data as PlanSubscription;
+  }
+
+  async updateSubscriptionByTenantId(
+    tenantId: string,
+    patch: {
+      status?: string;
+      payment_provider_data?: Record<string, any>;
+      current_period_end?: string;
+    }
+  ): Promise<void> {
+    const { error } = await this.client
+      .from('plan_subscriptions')
+      .update(patch)
+      .eq('tenant_id', tenantId);
+    handleSupabaseError(error);
+  }
+
+  async getTenantByWhatsApp(whatsappNumber: string): Promise<Tenant | null> {
+    const { data, error } = await this.client
+      .from('tenants')
+      .select('*')
+      .eq('whatsapp_number', whatsappNumber)
+      .maybeSingle();
+    handleSupabaseError(error);
+    return (data as Tenant) ?? null;
+  }
+
+  async updateTenantWhatsApp(
+    tenantId: string,
+    updates: {
+      whatsapp_verified?: boolean;
+      whatsapp_verification_token?: string | null;
+    }
+  ): Promise<void> {
+    const { error } = await this.client
+      .from('tenants')
+      .update(updates)
+      .eq('id', tenantId);
+    handleSupabaseError(error);
+  }
+
+  async createAdGroup(payload: {
+    tenant_id: string;
+    campaign_id: string;
+    name: string;
+    description?: string;
+    whatsapp_group_id?: string;
+    whatsapp_group_invite_link?: string;
+  }): Promise<any> {
+    const { data, error } = await this.client
+      .from('ad_groups')
+      .insert({
+        id: generateId(),
+        ...payload,
+      })
+      .select()
+      .single();
+    handleSupabaseError(error);
+    return data;
+  }
+
+  async updateAdGroup(
+    adGroupId: string,
+    updates: {
+      whatsapp_group_id?: string;
+      whatsapp_group_invite_link?: string;
+      status?: string;
+    }
+  ): Promise<void> {
+    const { error } = await this.client
+      .from('ad_groups')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', adGroupId);
+    handleSupabaseError(error);
+  }
+
+  async getAdGroupsByCampaign(campaignId: string): Promise<any[]> {
+    const { data, error } = await this.client
+      .from('ad_groups')
+      .select('*')
+      .eq('campaign_id', campaignId)
+      .order('created_at', { ascending: false });
+    handleSupabaseError(error);
+    return data ?? [];
+  }
 }

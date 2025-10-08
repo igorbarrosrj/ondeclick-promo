@@ -17,6 +17,9 @@ import { RedisClient } from '@config/redis';
 import { Logger } from 'pino';
 import { AdminService } from '@services/admin-service';
 import { AffiliateService } from '@services/affiliate-service';
+import { MercadoPagoService } from '@services/mercadopago-service';
+import { WhatsAppAuthService } from '@services/whatsapp-auth-service';
+import { AdGroupService } from '@services/ad-group-service';
 
 export const TOKENS = {
   env: createToken<AppEnv>('env'),
@@ -32,6 +35,9 @@ export const TOKENS = {
   billingService: createToken<BillingService>('billingService'),
   adminService: createToken<AdminService>('adminService'),
   affiliateService: createToken<AffiliateService>('affiliateService'),
+  mercadoPagoService: createToken<MercadoPagoService>('mercadoPagoService'),
+  whatsappAuthService: createToken<WhatsAppAuthService>('whatsappAuthService'),
+  adGroupService: createToken<AdGroupService>('adGroupService'),
   openAiService: createToken<OpenAIService>('openAiService'),
   queueService: createToken<QueueService>('queueService'),
   metaAdapter: createToken<MetaAdapter>('metaAdapter'),

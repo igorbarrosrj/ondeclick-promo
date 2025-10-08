@@ -8,6 +8,9 @@ create table if not exists tenants (
   category text,
   address jsonb,
   phone text,
+  whatsapp_number text unique,
+  whatsapp_verified boolean default false,
+  whatsapp_verification_token text,
   brand_color text default '#D62598',
   created_at timestamptz default now()
 );
@@ -69,9 +72,14 @@ create table if not exists support_messages (
 
 create table if not exists plan_subscriptions (
   id uuid primary key,
+  tenant_id uuid references tenants(id) on delete cascade,
   affiliate_id uuid references affiliate_profiles(id) on delete cascade,
   plan_code text not null,
-  status text check (status in ('active','past_due','canceled')) default 'active',
+  plan_name text,
+  status text check (status in ('active','past_due','canceled','pending')) default 'pending',
+  payment_provider text check (payment_provider in ('mercadopago','stripe')) default 'mercadopago',
+  payment_provider_id text,
+  payment_provider_data jsonb,
   started_at timestamptz default now(),
   current_period_end timestamptz,
   metadata jsonb
@@ -174,23 +182,40 @@ create table if not exists billing_usage (
   period_end timestamptz
 );
 
+create table if not exists ad_groups (
+  id uuid primary key,
+  tenant_id uuid references tenants(id) on delete cascade,
+  campaign_id uuid references campaigns(id) on delete cascade,
+  whatsapp_group_id text,
+  whatsapp_group_invite_link text,
+  name text not null,
+  description text,
+  status text check (status in ('creating','active','paused','archived')) default 'creating',
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
 create index if not exists idx_tenants_created_at on tenants(created_at);
+create index if not exists idx_tenants_whatsapp on tenants(whatsapp_number) where whatsapp_number is not null;
 create index if not exists idx_campaigns_tenant_created_at on campaigns(tenant_id, created_at);
 create index if not exists idx_events_campaign_created_at on events(campaign_id, created_at);
 create index if not exists idx_leads_tenant_created_at on leads(tenant_id, created_at);
 create index if not exists idx_leads_tags_gin on leads using gin(tags);
+create index if not exists idx_ad_groups_tenant on ad_groups(tenant_id);
+create index if not exists idx_ad_groups_campaign on ad_groups(campaign_id);
 
-create view if not exists campaign_kpis_view as
+create or replace view campaign_kpis_view as
 select
-  campaign_id,
-  channel,
-  jsonb_object_keys(payload) as metric,
-  cast(payload ->> jsonb_object_keys(payload) as numeric) as value,
+  e.campaign_id,
+  e.channel,
+  k.metric,
+  (e.payload ->> k.metric)::numeric as value,
   (now() - interval '30 days') as window_start,
   now() as window_end
-from events;
+from events e
+cross join lateral jsonb_object_keys(e.payload) as k(metric);
 
-create view if not exists tenant_kpis_view as
+create or replace view tenant_kpis_view as
 select
   tenant_id,
   type as metric,
@@ -200,7 +225,7 @@ select
 from events
 group by tenant_id, type;
 
-create view if not exists admin_tenant_summary_view as
+create or replace view admin_tenant_summary_view as
 select
   t.id as tenant_id,
   t.name,
