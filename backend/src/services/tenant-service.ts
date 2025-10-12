@@ -1,6 +1,6 @@
 import { NotFoundError } from '@core/errors';
 import { SupabaseRepository } from '@repositories/supabase-repository';
-import { Tenant, TenantPage, UUID } from '@types/database';
+import { Tenant, TenantPage, UUID } from 'database';
 
 export interface CreateTenantDto {
   name: string;

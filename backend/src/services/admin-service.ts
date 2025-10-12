@@ -1,5 +1,5 @@
 import { SupabaseRepository } from '@repositories/supabase-repository';
-import { SupportMessage, UUID } from '@types/database';
+import { SupportMessage, UUID } from 'database';
 
 export class AdminService {
   constructor(private readonly repository: SupabaseRepository) {}
