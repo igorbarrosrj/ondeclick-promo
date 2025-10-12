@@ -46,8 +46,8 @@ async function bootstrapWorkers() {
           campaignId: job.data.campaignId,
           name: job.data.campaignName ?? 'Campaign',
           objective: 'OUTCOME_MESSAGES',
-          adAccountId: integration.meta_payload?.adAccountId ?? '',
-          pageId: integration.meta_payload?.pageId,
+          adAccountId: (integration.meta_payload?.adAccountId as string) ?? '',
+          pageId: integration.meta_payload?.pageId as string | undefined,
           creative: {
             primaryText: job.data.primaryText ?? 'Mensagem padrão',
             headline: job.data.headline ?? 'Campanha',
