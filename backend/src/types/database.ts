@@ -8,6 +8,9 @@ export interface Tenant {
   address: Record<string, unknown> | null;
   phone: string | null;
   brand_color: string;
+  whatsapp_number?: string | null;
+  whatsapp_verified?: boolean;
+  whatsapp_verification_token?: string | null;
   created_at: string;
 }
 
