@@ -1,7 +1,7 @@
 import { QueueService } from '@queues/queue-service';
 import { SupabaseRepository } from '@repositories/supabase-repository';
 import { NotFoundError } from '@core/errors';
-import { Lead, UUID } from 'database';
+import { Lead, UUID } from '@types/database';
 
 export interface LeadFilters {
   status?: string;

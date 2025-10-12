@@ -3,7 +3,7 @@ import { QueueService } from '@queues/queue-service';
 import { QUEUE_META_PUBLISH, QUEUE_WHATSAPP_SEND } from '@queues/queue-names';
 import { SupabaseRepository } from '@repositories/supabase-repository';
 import { OpenAIService } from '@services/openai-service';
-import { AffiliateAsset, AffiliateCampaign, AffiliateProfile, PlanSubscription, UUID } from 'database';
+import { AffiliateAsset, AffiliateCampaign, AffiliateProfile, PlanSubscription, UUID } from '@types/database';
 
 export class AffiliateService {
   constructor(
