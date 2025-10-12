@@ -3,7 +3,7 @@ import { QUEUE_META_PUBLISH, QUEUE_WHATSAPP_SEND } from '@queues/queue-names';
 import { SupabaseRepository } from '@repositories/supabase-repository';
 import { OpenAIService } from './openai-service';
 import { ApplicationError, NotFoundError } from '@core/errors';
-import { Campaign, CampaignStatus, UUID } from '@types/database';
+import { Campaign, CampaignStatus, UUID } from 'database';
 
 export interface CreateCampaignDto {
   name: string;

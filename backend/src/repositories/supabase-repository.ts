@@ -18,7 +18,7 @@ import {
   Tenant,
   TenantPage,
   UUID
-} from '@types/database';
+} from 'database';
 import { ApplicationError, NotFoundError } from '@core/errors';
 
 function handleSupabaseError(error: unknown) {
