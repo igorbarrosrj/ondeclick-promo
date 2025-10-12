@@ -1,5 +1,5 @@
 import { SupabaseRepository } from '@repositories/supabase-repository';
-import { UUID } from 'database';
+import { UUID } from '@types/database';
 
 export class KpiService {
   constructor(private readonly repository: SupabaseRepository) {}

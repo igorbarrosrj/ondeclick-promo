@@ -6,7 +6,7 @@ import { MetaAdapter } from '@adapters/meta/meta-adapter';
 import { WhatsAppAdapter, WhatsAppAudienceMember } from '@adapters/whatsapp/whatsapp-adapter';
 import { N8nClient } from '@clients/n8n-client';
 import { NotFoundError } from '@core/errors';
-import { Integration, UUID } from 'database';
+import { Integration, UUID } from '@types/database';
 
 export class IntegrationService {
   constructor(
