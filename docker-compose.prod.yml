@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-  # Frontend Next.js
   frontend:
     build:
       context: .
@@ -19,8 +18,9 @@ services:
       - backend
       - redis
     restart: unless-stopped
+    networks:
+      - coolify
 
-  # Backend Fastify
   backend:
     build:
       context: .
@@ -65,8 +65,9 @@ services:
     depends_on:
       - redis
     restart: unless-stopped
+    networks:
+      - coolify
 
-  # Worker para filas
   worker:
     build:
       context: .
@@ -101,8 +102,9 @@ services:
       - redis
       - backend
     restart: unless-stopped
+    networks:
+      - coolify
 
-  # Redis para cache e filas
   redis:
     image: redis:7-alpine
     command: redis-server --appendonly yes
@@ -111,6 +113,12 @@ services:
     volumes:
       - redis_data:/data
     restart: unless-stopped
+    networks:
+      - coolify
+
+networks:
+  coolify:
+    external: true
 
 volumes:
   redis_data:
