@@ -7,9 +7,10 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
     ports:
-      - "3000:3000"
+      - "0.0.0.0:3000:3000"
     environment:
       - PORT=3000
+      - HOSTNAME=0.0.0.0
       - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
       - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
@@ -19,6 +20,7 @@ services:
       - backend
       - redis
     restart: unless-stopped
+    network_mode: bridge
 
   # Backend Fastify
   backend:
