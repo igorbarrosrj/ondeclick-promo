@@ -7,6 +7,8 @@ import { FAQ } from "@/components/landing/faq"
 import { Footer } from "@/components/landing/footer"
 import { Navigation } from "@/components/landing/navigation"
 
+export const dynamic = 'force-dynamic'
+
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
