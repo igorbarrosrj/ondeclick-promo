@@ -15,11 +15,11 @@ RUN pnpm install --frozen-lockfile
 # -----------------------------
 # Build the backend
 # -----------------------------
-FROM base AS builder
+FROM deps AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN pnpm build:backend
+# 🧩 Força o build dentro da pasta backend
+RUN cd backend && pnpm build:backend
 
 # -----------------------------
 # Production image
@@ -31,10 +31,10 @@ ENV NODE_ENV=production
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
-# copy pnpm + deps + compiled code
 COPY --from=deps /pnpm /pnpm
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json pnpm-lock.yaml ./
+# 🧩 Copia a pasta gerada pelo build acima
 COPY --from=builder /app/backend/dist ./backend/dist
 
 EXPOSE 4000
