@@ -8,7 +8,7 @@ import {
   QUEUE_REENGAGE,
   QUEUE_WHATSAPP_SEND
 } from '@queues/queue-names';
-import { SupabaseRepository } from '@repositories/supabase-repository';
+import { PostgresRepository } from '@repositories/postgres-repository';
 import { OpenAIService } from '@services/openai-service';
 import { MetaAdapter } from '@adapters/meta/meta-adapter';
 import { WhatsAppAdapter } from '@adapters/whatsapp/whatsapp-adapter';
@@ -20,7 +20,7 @@ async function bootstrapWorkers() {
   const env = container.resolve(TOKENS.env);
   const logger = container.resolve(TOKENS.logger);
   const redis = container.resolve(TOKENS.redis);
-  const repository = container.resolve(TOKENS.supabaseRepository) as SupabaseRepository;
+  const repository = container.resolve(TOKENS.repository) as PostgresRepository;
   const openAiService = container.resolve(TOKENS.openAiService) as OpenAIService;
   const metaAdapter = container.resolve(TOKENS.metaAdapter) as MetaAdapter;
   const whatsappAdapter = container.resolve(TOKENS.whatsappAdapter) as WhatsAppAdapter;

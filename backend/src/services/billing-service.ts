@@ -1,13 +1,13 @@
 import Stripe from 'stripe';
 import { AppEnv } from '@config/env';
-import { SupabaseRepository } from '@repositories/supabase-repository';
+import { PostgresRepository } from '@repositories/postgres-repository';
 import { N8nClient } from '@clients/n8n-client';
 import { ApplicationError } from '@core/errors';
 
 export class BillingService {
   private readonly stripe: Stripe;
 
-  constructor(private readonly env: AppEnv, private readonly repository: SupabaseRepository, private readonly n8nClient: N8nClient) {
+  constructor(private readonly env: AppEnv, private readonly repository: PostgresRepository, private readonly n8nClient: N8nClient) {
     this.stripe = new Stripe(env.STRIPE_SECRET_KEY, {
       apiVersion: '2024-06-20'
     });

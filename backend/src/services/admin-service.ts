@@ -1,8 +1,8 @@
-import { SupabaseRepository } from '@repositories/supabase-repository';
-import { SupportMessage, UUID } from '@types/database';
+import { PostgresRepository } from '@repositories/postgres-repository';
+import type { UUID, Campaign, CampaignStatus, Lead, LeadStatus, EventType } from '../types/database';
 
 export class AdminService {
-  constructor(private readonly repository: SupabaseRepository) {}
+  constructor(private readonly repository: PostgresRepository) {}
 
   getTenantSummaries() {
     return this.repository.getAdminTenantSummaries();

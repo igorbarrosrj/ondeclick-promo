@@ -1,5 +1,5 @@
 import { AppEnv } from '@config/env';
-import { SupabaseRepository } from '@repositories/supabase-repository';
+import { PostgresRepository } from '@repositories/postgres-repository';
 import { N8nClient } from '@clients/n8n-client';
 import { ApplicationError } from '@core/errors';
 import { fetch } from 'undici';
@@ -43,7 +43,7 @@ export class MercadoPagoService {
 
   constructor(
     private readonly env: AppEnv,
-    private readonly repository: SupabaseRepository,
+    private readonly repository: PostgresRepository,
     private readonly n8nClient: N8nClient
   ) {}
 

@@ -1,5 +1,5 @@
 import { AppEnv } from '@config/env';
-import { SupabaseRepository } from '@repositories/supabase-repository';
+import { PostgresRepository } from '@repositories/postgres-repository';
 import { N8nClient } from '@clients/n8n-client';
 import { ApplicationError } from '@core/errors';
 import { generateId } from '@utils/ids';
@@ -8,7 +8,7 @@ import crypto from 'node:crypto';
 export class WhatsAppAuthService {
   constructor(
     private readonly env: AppEnv,
-    private readonly repository: SupabaseRepository,
+    private readonly repository: PostgresRepository,
     private readonly n8nClient: N8nClient
   ) {}
 
@@ -41,16 +41,19 @@ export class WhatsAppAuthService {
       const slug = `user-${cleanNumber.slice(-8)}`;
       const tenantId = generateId();
 
-      await this.repository.client
-        .from('tenants')
-        .insert({
-          id: tenantId,
-          slug,
-          name: `User ${cleanNumber}`,
-          whatsapp_number: cleanNumber,
-          whatsapp_verified: false,
-          whatsapp_verification_token: verificationToken,
-        });
+      await this.repository.insertTenant({
+        id: tenantId,
+        slug,
+        name: `User ${cleanNumber}`,
+        category: 'commerce',
+        address: {},
+        phone: cleanNumber
+      });
+
+      await this.repository.updateTenantWhatsAppAuth(tenantId, {
+        whatsapp_verified: false,
+        whatsapp_verification_token: verificationToken
+      });
 
       // Criar subscription pendente
       await this.repository.createSubscription({
@@ -146,17 +149,12 @@ export class WhatsAppAuthService {
     }
 
     // Verificar subscription ativa
-    const { data: subscription } = await this.repository.client
-      .from('plan_subscriptions')
-      .select('*')
-      .eq('tenant_id', tenant.id)
-      .eq('status', 'active')
-      .maybeSingle();
+    const subscription = await this.repository.getPlanSubscription(tenant.id);
 
     return {
       authenticated: true,
       tenantId: tenant.id,
-      hasActiveSubscription: !!subscription,
+      hasActiveSubscription: !!subscription && subscription.status === 'active',
     };
   }
 

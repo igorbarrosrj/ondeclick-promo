@@ -1,6 +1,6 @@
 import { NotFoundError } from '@core/errors';
-import { SupabaseRepository } from '@repositories/supabase-repository';
-import { Tenant, TenantPage, UUID } from '@types/database';
+import { PostgresRepository } from '@repositories/postgres-repository';
+import type { UUID, Campaign, CampaignStatus, Lead, LeadStatus, EventType } from '../types/database';
 
 export interface CreateTenantDto {
   name: string;
@@ -16,7 +16,7 @@ export interface TenantPublicProfile {
 }
 
 export class TenantService {
-  constructor(private readonly repository: SupabaseRepository) {}
+  constructor(private readonly repository: PostgresRepository) {}
 
   async createTenant(input: CreateTenantDto, ownerUserId: UUID) {
     return this.repository.createTenant({ ...input, ownerUserId });

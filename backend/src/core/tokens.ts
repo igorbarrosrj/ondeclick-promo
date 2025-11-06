@@ -1,6 +1,6 @@
 import { createToken } from './container';
 import { AppEnv } from '@config/env';
-import { SupabaseRepository } from '@repositories/supabase-repository';
+import { PostgresRepository } from '@repositories/postgres-repository';
 import { TenantService } from '@services/tenant-service';
 import { CampaignService } from '@services/campaign-service';
 import { LeadService } from '@services/lead-service';
@@ -12,7 +12,7 @@ import { QueueService } from '@queues/queue-service';
 import { MetaAdapter } from '@adapters/meta/meta-adapter';
 import { WhatsAppAdapter } from '@adapters/whatsapp/whatsapp-adapter';
 import { N8nClient } from '@clients/n8n-client';
-import { SupabaseServiceClient } from '@config/supabase';
+import { Pool } from 'pg';
 import { RedisClient } from '@config/redis';
 import { Logger } from 'pino';
 import { AdminService } from '@services/admin-service';
@@ -24,9 +24,9 @@ import { AdGroupService } from '@services/ad-group-service';
 export const TOKENS = {
   env: createToken<AppEnv>('env'),
   logger: createToken<Logger>('logger'),
-  supabaseClient: createToken<SupabaseServiceClient>('supabaseClient'),
+  postgresPool: createToken<Pool>('postgresPool'),
   redis: createToken<RedisClient>('redis'),
-  supabaseRepository: createToken<SupabaseRepository>('supabaseRepository'),
+  repository: createToken<PostgresRepository>('repository'),
   tenantService: createToken<TenantService>('tenantService'),
   campaignService: createToken<CampaignService>('campaignService'),
   leadService: createToken<LeadService>('leadService'),

@@ -1,12 +1,12 @@
 import { AppEnv } from '@config/env';
-import { SupabaseRepository } from '@repositories/supabase-repository';
+import { PostgresRepository } from '@repositories/postgres-repository';
 import { N8nClient } from '@clients/n8n-client';
 import { ApplicationError } from '@core/errors';
 
 export class AdGroupService {
   constructor(
     private readonly env: AppEnv,
-    private readonly repository: SupabaseRepository,
+    private readonly repository: PostgresRepository,
     private readonly n8nClient: N8nClient
   ) {}
 
@@ -23,11 +23,7 @@ export class AdGroupService {
     status: 'creating' | 'error';
   }> {
     // Buscar informações do tenant para pegar o WhatsApp
-    const { data: tenant } = await this.repository.client
-      .from('tenants')
-      .select('whatsapp_number, name')
-      .eq('id', params.tenantId)
-      .single();
+    const tenant = await this.repository.getTenantById(params.tenantId);
 
     if (!tenant) {
       throw new ApplicationError('Tenant not found', 404);
@@ -93,11 +89,7 @@ export class AdGroupService {
     customerName?: string;
   }): Promise<void> {
     // Buscar informações do grupo
-    const { data: adGroup } = await this.repository.client
-      .from('ad_groups')
-      .select('*, campaigns(name)')
-      .eq('id', params.adGroupId)
-      .single();
+    const adGroup = await this.repository.getAdGroup(params.tenantId, params.adGroupId);
 
     if (!adGroup || !adGroup.whatsapp_group_id) {
       throw new ApplicationError('Ad group not found or not active', 404);
@@ -124,13 +116,8 @@ export class AdGroupService {
   /**
    * Obtém link de convite do grupo
    */
-  async getGroupInviteLink(adGroupId: string): Promise<string | null> {
-    const { data: adGroup } = await this.repository.client
-      .from('ad_groups')
-      .select('whatsapp_group_invite_link')
-      .eq('id', adGroupId)
-      .single();
-
+  async getGroupInviteLink(tenantId: string, adGroupId: string): Promise<string | null> {
+    const adGroup = await this.repository.getAdGroup(tenantId, adGroupId);
     return adGroup?.whatsapp_group_invite_link || null;
   }
 }

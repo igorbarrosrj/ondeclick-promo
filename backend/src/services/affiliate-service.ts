@@ -1,13 +1,13 @@
 import { ApplicationError, NotFoundError } from '@core/errors';
 import { QueueService } from '@queues/queue-service';
 import { QUEUE_META_PUBLISH, QUEUE_WHATSAPP_SEND } from '@queues/queue-names';
-import { SupabaseRepository } from '@repositories/supabase-repository';
+import { PostgresRepository } from '@repositories/postgres-repository';
 import { OpenAIService } from '@services/openai-service';
-import { AffiliateAsset, AffiliateCampaign, AffiliateProfile, PlanSubscription, UUID } from '@types/database';
+import type { UUID, Campaign, CampaignStatus, Lead, LeadStatus, EventType } from '../types/database';
 
 export class AffiliateService {
   constructor(
-    private readonly repository: SupabaseRepository,
+    private readonly repository: PostgresRepository,
     private readonly queues: QueueService,
     private readonly openAi: OpenAIService
   ) {}
