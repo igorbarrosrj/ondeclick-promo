@@ -18,24 +18,21 @@ RUN pnpm install --frozen-lockfile
 FROM deps AS builder
 WORKDIR /app
 COPY . .
-# 🧩 Força o build dentro da pasta backend
-RUN cd backend && pnpm build:backend
+RUN cd backend && pnpm run build:backend
 
 # -----------------------------
 # Production image
 # -----------------------------
 FROM node:20-alpine AS runner
 WORKDIR /app
-
 ENV NODE_ENV=production
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
 COPY --from=deps /pnpm /pnpm
 COPY --from=deps /app/node_modules ./node_modules
-COPY package.json pnpm-lock.yaml ./
-# 🧩 Copia a pasta gerada pelo build acima
 COPY --from=builder /app/backend/dist ./backend/dist
+COPY package.json pnpm-lock.yaml ./
 
 EXPOSE 4000
 CMD ["node", "backend/dist/server.js"]
