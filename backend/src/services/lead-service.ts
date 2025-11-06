@@ -1,7 +1,7 @@
 import { QueueService } from '@queues/queue-service';
-import { SupabaseRepository } from '@repositories/supabase-repository';
+import { PostgresRepository } from '@repositories/postgres-repository';
 import { NotFoundError } from '@core/errors';
-import { Lead, UUID } from '@types/database';
+import type { UUID, Campaign, CampaignStatus, Lead, LeadStatus, EventType } from '../types/database';
 
 export interface LeadFilters {
   status?: string;
@@ -10,7 +10,7 @@ export interface LeadFilters {
 }
 
 export class LeadService {
-  constructor(private readonly repository: SupabaseRepository, private readonly queues: QueueService) {}
+  constructor(private readonly repository: PostgresRepository, private readonly queues: QueueService) {}
 
   list(tenantId: UUID, filters: LeadFilters) {
     return this.repository.listLeads(tenantId, filters);

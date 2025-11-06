@@ -1,9 +1,9 @@
 import { QueueService } from '@queues/queue-service';
 import { QUEUE_META_PUBLISH, QUEUE_WHATSAPP_SEND } from '@queues/queue-names';
-import { SupabaseRepository } from '@repositories/supabase-repository';
+import { PostgresRepository } from '@repositories/postgres-repository';
 import { OpenAIService } from './openai-service';
 import { ApplicationError, NotFoundError } from '@core/errors';
-import { Campaign, CampaignStatus, UUID } from '@types/database';
+import type { UUID, Campaign, CampaignStatus, Lead, LeadStatus, EventType } from '../types/database';
 
 export interface CreateCampaignDto {
   name: string;
@@ -16,7 +16,7 @@ export interface CreateCampaignDto {
 
 export class CampaignService {
   constructor(
-    private readonly repository: SupabaseRepository,
+    private readonly repository: PostgresRepository,
     private readonly queues: QueueService,
     private readonly openai: OpenAIService
   ) {}

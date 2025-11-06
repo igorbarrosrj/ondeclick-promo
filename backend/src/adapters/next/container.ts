@@ -3,10 +3,10 @@ import { TOKENS } from '@core/tokens';
 import {
   loadEnv,
   createLogger,
-  createSupabaseClient,
+  createPostgresPool,
   createRedisClient
 } from '@config/index';
-import { SupabaseRepository } from '@repositories/supabase-repository';
+import { PostgresRepository } from '@repositories/postgres-repository';
 import { TenantService } from '@services/tenant-service';
 import { CampaignService } from '@services/campaign-service';
 import { LeadService } from '@services/lead-service';
@@ -40,9 +40,9 @@ export function getBackendContainer() {
 
   const env = loadEnv();
   const logger = createLogger(env);
-  const supabase = createSupabaseClient(env);
+  const postgresPool = createPostgresPool(env);
   const redis = createRedisClient(env);
-  const repository = new SupabaseRepository(supabase);
+  const repository = new PostgresRepository(env);
   const openAiService = new OpenAIService(env.OPENAI_API_KEY);
   const n8nClient = new N8nClient(env);
   const metaAdapter = new MetaAdapter(env);
@@ -59,9 +59,9 @@ export function getBackendContainer() {
   const container = new Container();
   container.registerValue(TOKENS.env, env);
   container.registerValue(TOKENS.logger, logger);
-  container.registerValue(TOKENS.supabaseClient, supabase);
+  container.registerValue(TOKENS.postgresPool, postgresPool);
   container.registerValue(TOKENS.redis, redis);
-  container.registerValue(TOKENS.supabaseRepository, repository);
+  container.registerValue(TOKENS.repository, repository);
   container.registerValue(TOKENS.openAiService, openAiService);
   container.registerValue(TOKENS.n8nClient, n8nClient);
   container.registerValue(TOKENS.metaAdapter, metaAdapter);
