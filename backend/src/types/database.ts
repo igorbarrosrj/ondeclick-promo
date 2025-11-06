@@ -121,6 +121,19 @@ export interface Event {
   created_at: string;
 }
 
+export interface AdGroup {
+  id: UUID;
+  tenant_id: UUID;
+  campaign_id: UUID;
+  whatsapp_group_id: string | null;
+  whatsapp_group_invite_link: string | null;
+  name: string;
+  description: string | null;
+  status: 'creating' | 'active' | 'paused' | 'archived';
+  created_at: string;
+  updated_at: string;
+}
+
 export interface BillingUsage {
   id: UUID;
   tenant_id: UUID;
@@ -163,6 +176,7 @@ export interface Database {
   affiliate_assets: AffiliateAsset;
   support_messages: SupportMessage;
   plan_subscriptions: PlanSubscription;
+  ad_groups: AdGroup;
 }
 
 export interface AffiliateProfile {
@@ -213,9 +227,14 @@ export interface SupportMessage {
 
 export interface PlanSubscription {
   id: UUID;
-  affiliate_id: UUID;
+  tenant_id: UUID | null;
+  affiliate_id: UUID | null;
   plan_code: string;
-  status: 'active' | 'past_due' | 'canceled';
+  plan_name: string | null;
+  status: 'active' | 'past_due' | 'canceled' | 'pending';
+  payment_provider: 'mercadopago' | 'stripe';
+  payment_provider_id: string | null;
+  payment_provider_data: Record<string, unknown> | null;
   started_at: string;
   current_period_end: string | null;
   metadata: Record<string, unknown> | null;

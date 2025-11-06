@@ -3,7 +3,7 @@ import { requireAuth } from './auth-hooks';
 import { TOKENS } from '@core/tokens';
 
 export async function registerAuthRoutes(app: FastifyInstance) {
-  const repository = app.container.resolve(TOKENS.supabaseRepository);
+  const repository = app.container.resolve(TOKENS.repository);
 
   app.get('/api/me', { preHandler: requireAuth }, async (request, reply) => {
     const auth = request.auth!;

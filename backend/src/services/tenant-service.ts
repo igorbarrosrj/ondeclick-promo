@@ -1,6 +1,6 @@
 import { NotFoundError } from '@core/errors';
 import { PostgresRepository } from '@repositories/postgres-repository';
-import type { UUID, Campaign, CampaignStatus, Lead, LeadStatus, EventType } from '../types/database';
+import type { UUID, Tenant, TenantPage } from '../types/database';
 
 export interface CreateTenantDto {
   name: string;

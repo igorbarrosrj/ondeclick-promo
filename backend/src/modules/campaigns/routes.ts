@@ -7,8 +7,8 @@ import { requireAuth } from '@modules/auth/auth-hooks';
 const campaignSchema = z.object({
   name: z.string().min(3),
   channels: z.array(z.enum(['meta', 'whatsapp', 'tiktok'])).nonempty(),
-  offer: z.record(z.any()),
-  geo: z.record(z.any()).optional(),
+  offer: z.record(z.unknown()),
+  geo: z.record(z.unknown()).optional(),
   budgetDaily: z.number().min(0).optional(),
   schedule: z
     .object({
@@ -31,7 +31,14 @@ export async function registerCampaignRoutes(app: FastifyInstance) {
     const auth = request.auth!;
     const body = campaignSchema.parse(request.body);
 
-    const campaign = await campaignService.create(auth.tenantId, body);
+    const campaign = await campaignService.create(auth.tenantId, {
+      name: body.name,
+      channels: body.channels,
+      offer: body.offer,
+      geo: body.geo,
+      budgetDaily: body.budgetDaily,
+      schedule: body.schedule
+    });
     reply.code(201).send(campaign);
   });
 

@@ -84,6 +84,7 @@ export class AdGroupService {
    * Adiciona um cliente ao grupo de anúncio via WhatsApp
    */
   async addCustomerToGroup(params: {
+    tenantId: string;
     adGroupId: string;
     customerWhatsApp: string;
     customerName?: string;

@@ -3,7 +3,7 @@ import { QueueService } from '@queues/queue-service';
 import { QUEUE_META_PUBLISH, QUEUE_WHATSAPP_SEND } from '@queues/queue-names';
 import { PostgresRepository } from '@repositories/postgres-repository';
 import { OpenAIService } from '@services/openai-service';
-import type { UUID, Campaign, CampaignStatus, Lead, LeadStatus, EventType } from '../types/database';
+import type { UUID, AffiliateProfile, PlanSubscription, AffiliateCampaign, AffiliateAsset } from '../types/database';
 
 export class AffiliateService {
   constructor(
@@ -54,7 +54,7 @@ export class AffiliateService {
     return this.repository.insertAffiliateAsset({ affiliate_campaign_id: campaignId, type: 'banner', url: imageUrl });
   }
 
-  async enqueuePublish(affiliateId: UUID, campaignId: UUID, options: { channels: string[]; traceId?: string }) {
+  async enqueuePublish(affiliateId: UUID, campaignId: UUID, options: { channels?: string[]; traceId?: string }) {
     const campaign = await this.repository.getAffiliateCampaign(campaignId, affiliateId);
     const subscription = await this.repository.getAffiliateSubscription(affiliateId);
     if (!subscription || subscription.status !== 'active') {

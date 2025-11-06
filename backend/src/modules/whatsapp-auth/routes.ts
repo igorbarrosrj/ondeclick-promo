@@ -14,7 +14,11 @@ export async function registerWhatsAppAuthRoutes(app: FastifyInstance) {
       .parse(request.body);
 
     const whatsappAuthService = app.container.resolve(TOKENS.whatsappAuthService);
-    const result = await whatsappAuthService.initiateAuth(body);
+    const result = await whatsappAuthService.initiateAuth({
+      whatsappNumber: body.whatsappNumber,
+      planCode: body.planCode,
+      planName: body.planName,
+    });
 
     reply.send(result);
   });
@@ -29,7 +33,10 @@ export async function registerWhatsAppAuthRoutes(app: FastifyInstance) {
       .parse(request.body);
 
     const whatsappAuthService = app.container.resolve(TOKENS.whatsappAuthService);
-    const result = await whatsappAuthService.handleWhatsAppReply(body);
+    const result = await whatsappAuthService.handleWhatsAppReply({
+      whatsappNumber: body.whatsappNumber,
+      message: body.message,
+    });
 
     reply.send(result);
   });

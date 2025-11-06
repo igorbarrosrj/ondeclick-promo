@@ -1,5 +1,5 @@
 import { PostgresRepository } from '@repositories/postgres-repository';
-import type { UUID, Campaign, CampaignStatus, Lead, LeadStatus, EventType } from '../types/database';
+import type { UUID, SupportMessage } from '../types/database';
 
 export class AdminService {
   constructor(private readonly repository: PostgresRepository) {}

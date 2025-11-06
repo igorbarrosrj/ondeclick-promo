@@ -2,13 +2,13 @@ import { AppEnv } from '@config/env';
 import { N8nClient } from '@clients/n8n-client';
 import { withRetry } from '@utils/retry';
 
-export interface WhatsAppAudienceMember {
+export interface WhatsAppAudienceMember extends Record<string, unknown> {
   name?: string;
   phone: string;
   leadId?: string;
 }
 
-export interface WhatsAppMessage {
+export interface WhatsAppMessage extends Record<string, unknown> {
   text: string;
   buttons?: Array<{ label: string; payload: string }>;
   mediaUrl?: string;
