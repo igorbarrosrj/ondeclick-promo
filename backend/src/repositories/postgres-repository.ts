@@ -753,49 +753,7 @@ export class PostgresRepository {
     }
   }
 
-  async createSubscription(data: {
-    tenant_id: string;
-    plan_code: string;
-    plan_name: string;
-    status: string;
-  }) {
-    const client = await this.getClient();
-    try {
-      const id = uuid();
-      const result = await client.query(
-        `INSERT INTO plan_subscriptions (id, tenant_id, plan_code, plan_name, status)
-         VALUES ($1, $2, $3, $4, $5)
-         RETURNING *`,
-        [id, data.tenant_id, data.plan_code, data.plan_name, data.status]
-      );
-      return result.rows[0];
-    } finally {
-      client.release();
-    }
-  }
-}
+ TS1434: Unexpected keyword or identifier.
+TS1005: ';' expected.
+TS1128: Declaration or statement expected.
 
-  // Stub methods - TODO: implement properly  
-  async getAdminTenantSummaries() { return []; }
-  async listSupportMessages() { return []; }
-  async upsertSupportMessage(data: any) { return null; }
-  async getAffiliateProfileByUser(userId: string) { return null; }
-  async upsertAffiliateProfile(data: any) { return null; }
-  async getAffiliateSubscription(affiliateId: string) { return null; }
-  async upsertPlanSubscription(data: any) { return null; }
-  async createAffiliateCampaign(data: any) { return null; }
-  async listAffiliateCampaigns(affiliateId: string) { return []; }
-  async updateAffiliateCampaign(id: string, affiliateId: string, data: any) { return null; }
-  async listAffiliateAssets(campaignId: string) { return []; }
-  async getAffiliateCampaign(affiliateId: string, campaignId: string) { return null; }
-  async insertAffiliateAsset(data: any) { return null; }
-  async incrementUsage(tenantId: string, metric: string, value: number) { return null; }
-  async getTenantKpis(tenantId: string) { return null; }
-  async getCampaignKpis(tenantId: string, campaignId: string) { return null; }
-  async recordLead(tenantId: string, data: any) { return this.insertLead({ ...data, tenant_id: tenantId, status: 'new' }); }
-  async updateSubscriptionByTenantId(tenantId: string, data: any) { return null; }
-  async createTenant(data: any) { return this.insertTenant(data); }
-  async getTenantPage(tenantId: string) { return null; }
-  async upsertTenantPage(data: any) { return null; }
-  async listMarketplaceTenants() { return []; }
-}
