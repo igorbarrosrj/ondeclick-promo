@@ -31,6 +31,6 @@ COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
 
 USER nodejs
 
-EXPOSE 4000
+EXPOSE 8080
 
 CMD ["node", "backend/dist/server.js"]
