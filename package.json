@@ -7,11 +7,14 @@
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start",
-    "build:backend": "tsc -p backend/tsconfig.build.json",
+
+    "build:backend": "tsc -p backend/tsconfig.build.json && tsc-alias -p backend/tsconfig.build.json",
     "dev:backend": "tsx watch backend/src/server.ts",
     "start:backend": "node backend/dist/server.js",
-    "build:worker": "tsc -p backend/tsconfig.worker.json",
+
+    "build:worker": "tsc -p backend/tsconfig.worker.json && tsc-alias -p backend/tsconfig.worker.json",
     "start:worker": "node backend/dist/worker.js",
+
     "test:backend": "vitest --run",
     "seed:backend": "tsx backend/scripts/seed.ts"
   },
@@ -110,6 +113,7 @@
     "@types/supertest": "^6.0.3",
     "supertest": "^7.1.1",
     "tsx": "^4.19.2",
-    "vitest": "^2.1.4"
+    "vitest": "^2.1.4",
+    "tsc-alias": "^1.8.10"
   }
 }
