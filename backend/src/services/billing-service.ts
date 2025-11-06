@@ -9,7 +9,7 @@ export class BillingService {
 
   constructor(private readonly env: AppEnv, private readonly repository: PostgresRepository, private readonly n8nClient: N8nClient) {
     this.stripe = new Stripe(env.STRIPE_SECRET_KEY, {
-      apiVersion: '2024-06-20'
+      apiVersion: '2025-02-24.acacia'
     });
   }
 
@@ -54,9 +54,6 @@ export class BillingService {
       case 'invoice.paid':
       case 'customer.subscription.updated':
         await this.n8nClient.notifyBilling({ event: event.type, data: event.data.object });
-        break;
-      case 'usage_record.summary.updated':
-        // no-op for now
         break;
       default:
         break;

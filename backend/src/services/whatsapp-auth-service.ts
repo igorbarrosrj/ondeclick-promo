@@ -47,10 +47,12 @@ export class WhatsAppAuthService {
         name: `User ${cleanNumber}`,
         category: 'commerce',
         address: {},
-        phone: cleanNumber
+        phone: cleanNumber,
+        whatsappNumber: cleanNumber
       });
 
       await this.repository.updateTenantWhatsAppAuth(tenantId, {
+        whatsapp_number: cleanNumber,
         whatsapp_verified: false,
         whatsapp_verification_token: verificationToken
       });

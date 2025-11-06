@@ -1,23 +1,11 @@
 {
   "extends": "./tsconfig.base.json",
-  "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "baseUrl": "./src",
-    "paths": {
-      "@core/*": ["core/*"],
-      "@config/*": ["config/*"],
-      "@modules/*": ["modules/*"],
-      "@services/*": ["services/*"],
-      "@utils/*": ["utils/*"]
-    },
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
-  },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "tests"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts"
+  ],
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/tests/**"
+  ]
 }

@@ -33,8 +33,8 @@ export function createHttpLogger(env: Pick<AppEnv, 'LOG_LEVEL' | 'NODE_ENV'>) {
     customSuccessMessage(_, res) {
       return `completed ${res.statusCode}`;
     },
-    customErrorMessage(err, _res) {
-      return err.message;
+    customErrorMessage(_req, _res, error) {
+      return error instanceof Error ? error.message : 'request failed';
     }
   });
 }

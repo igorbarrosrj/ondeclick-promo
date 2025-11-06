@@ -35,7 +35,11 @@ export async function registerAdGroupRoutes(app: FastifyInstance) {
       .parse(request.body);
 
     const adGroupService = app.container.resolve(TOKENS.adGroupService);
-    await adGroupService.handleGroupCreated(body);
+    await adGroupService.handleGroupCreated({
+      adGroupId: body.adGroupId,
+      whatsappGroupId: body.whatsappGroupId,
+      inviteLink: body.inviteLink,
+    });
 
     reply.send({ ok: true });
   });
@@ -49,9 +53,11 @@ export async function registerAdGroupRoutes(app: FastifyInstance) {
         customerName: z.string().optional(),
       })
       .parse(request.body);
+    const auth = request.auth!;
 
     const adGroupService = app.container.resolve(TOKENS.adGroupService);
     await adGroupService.addCustomerToGroup({
+      tenantId: auth.tenantId,
       adGroupId: params.adGroupId,
       customerWhatsApp: body.customerWhatsApp,
       customerName: body.customerName,
@@ -73,9 +79,10 @@ export async function registerAdGroupRoutes(app: FastifyInstance) {
   // Obter link de convite do grupo
   app.get('/api/ad-groups/:adGroupId/invite-link', { preHandler: requireAuth }, async (request, reply) => {
     const params = z.object({ adGroupId: z.string().uuid() }).parse(request.params);
+    const auth = request.auth!;
 
     const adGroupService = app.container.resolve(TOKENS.adGroupService);
-    const inviteLink = await adGroupService.getGroupInviteLink(params.adGroupId);
+    const inviteLink = await adGroupService.getGroupInviteLink(auth.tenantId, params.adGroupId);
 
     reply.send({ inviteLink });
   });

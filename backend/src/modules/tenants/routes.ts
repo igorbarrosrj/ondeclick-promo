@@ -7,7 +7,7 @@ const createTenantSchema = z.object({
   name: z.string().min(2),
   slug: z.string().regex(/^[a-z0-9-]+$/),
   category: z.string().optional(),
-  address: z.record(z.any()).optional(),
+  address: z.record(z.unknown()).optional(),
   phone: z.string().optional()
 });
 
@@ -30,7 +30,16 @@ export async function registerTenantRoutes(app: FastifyInstance) {
     const body = createTenantSchema.parse(request.body);
     const auth = request.auth!;
 
-    const tenant = await tenantService.createTenant(body, auth.userId);
+    const tenant = await tenantService.createTenant(
+      {
+        name: body.name,
+        slug: body.slug,
+        category: body.category,
+        address: body.address,
+        phone: body.phone
+      },
+      auth.userId
+    );
     reply.code(201).send(tenant);
   });
 

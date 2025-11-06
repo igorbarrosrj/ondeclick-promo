@@ -35,7 +35,7 @@ export async function startTelemetry(env: AppEnv) {
   telemetrySdk = new NodeSDK({
     resource,
     traceExporter,
-    metricReader
+    metricReader: metricReader as any
   });
 
   await telemetrySdk.start();

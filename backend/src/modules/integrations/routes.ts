@@ -33,7 +33,7 @@ export async function registerIntegrationRoutes(app: FastifyInstance) {
   });
 
   app.post('/api/integrations/whatsapp/connect', { preHandler: requireAuth }, async (request, reply) => {
-    const body = z.record(z.any()).parse(request.body ?? {});
+    const body = z.record(z.unknown()).parse(request.body ?? {});
     const auth = request.auth!;
     const integration = await integrationService.connectWhatsApp(auth.tenantId, body);
     reply.send(integration);
@@ -60,7 +60,14 @@ export async function registerIntegrationRoutes(app: FastifyInstance) {
       .parse(request.body ?? {});
 
     const auth = request.auth!;
-    await integrationService.sendWhatsAppTest(auth.tenantId, { audience: body.audience, message: body.message });
+    await integrationService.sendWhatsAppTest(auth.tenantId, {
+      audience: body.audience.map((member) => ({
+        name: member.name,
+        phone: member.phone,
+        leadId: member.leadId
+      })),
+      message: body.message
+    });
     reply.send({ ok: true });
   });
 
@@ -73,12 +80,16 @@ export async function registerIntegrationRoutes(app: FastifyInstance) {
     const body = z
       .object({
         tenantName: z.string(),
-        offer: z.record(z.any()),
+        offer: z.record(z.unknown()),
         tone: z.enum(['direct', 'friendly', 'promotional']).optional()
       })
       .parse(request.body ?? {});
 
-    const copy = await openAiService.generateCampaignCopy(body);
+    const copy = await openAiService.generateCampaignCopy({
+      tenantName: body.tenantName,
+      offer: body.offer,
+      tone: body.tone
+    });
     reply.send(copy);
   });
 }

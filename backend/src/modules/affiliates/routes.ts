@@ -18,18 +18,18 @@ export async function registerAffiliateRoutes(app: FastifyInstance) {
       .object({
         displayName: z.string().optional(),
         payoutMethod: z.string().optional(),
-        payoutDetails: z.record(z.any()).optional(),
+        payoutDetails: z.record(z.unknown()).optional(),
         plan: z.string().optional()
       })
       .parse(request.body ?? {});
 
     const profile = await affiliateService.upsertProfile({
       user_id: auth.userId,
-      display_name: body.displayName,
-      payout_method: body.payoutMethod,
-      payout_details: body.payoutDetails,
+      display_name: body.displayName ?? null,
+      payout_method: body.payoutMethod ?? null,
+      payout_details: body.payoutDetails ?? null,
       plan: body.plan ?? 'basic'
-    } as any);
+    });
 
     reply.send(profile);
   });
@@ -46,7 +46,7 @@ export async function registerAffiliateRoutes(app: FastifyInstance) {
       .object({
         name: z.string().min(3),
         description: z.string().optional(),
-        offer: z.record(z.any()).optional(),
+        offer: z.record(z.unknown()).optional(),
         channels: z.array(z.string()).optional(),
         budget: z.number().optional(),
         scheduledAt: z.string().datetime().optional()
@@ -72,7 +72,7 @@ export async function registerAffiliateRoutes(app: FastifyInstance) {
       .object({
         name: z.string().optional(),
         description: z.string().optional(),
-        offer: z.record(z.any()).optional(),
+        offer: z.record(z.unknown()).optional(),
         status: z.string().optional(),
         channels: z.array(z.string()).optional()
       })

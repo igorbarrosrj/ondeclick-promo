@@ -18,7 +18,16 @@ export async function registerMercadoPagoRoutes(app: FastifyInstance) {
       .parse(request.body);
 
     const mercadoPagoService = app.container.resolve(TOKENS.mercadoPagoService);
-    const result = await mercadoPagoService.createPreference(body);
+    const { tenantId, planCode, planName, price, successUrl, failureUrl, pendingUrl } = body;
+    const result = await mercadoPagoService.createPreference({
+      tenantId,
+      planCode,
+      planName,
+      price,
+      successUrl,
+      failureUrl,
+      pendingUrl
+    });
 
     reply.send(result);
   });
