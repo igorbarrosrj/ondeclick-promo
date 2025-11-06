@@ -1,0 +1,10 @@
+# Dockerfile para Evolution API
+# Este arquivo é opcional - pode usar a imagem oficial diretamente
+FROM atendai/evolution-api:latest
+
+# Configurações adicionais podem ser adicionadas aqui se necessário
+# Por padrão, a imagem oficial já está otimizada
+
+EXPOSE 8080
+
+# O CMD já está definido na imagem base

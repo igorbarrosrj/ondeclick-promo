@@ -114,6 +114,38 @@ services:
       - redis_data:/data
     restart: unless-stopped
 
+  # Evolution API para WhatsApp
+  evolution-api:
+    image: atendai/evolution-api:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_URL=${EVOLUTION_SERVER_URL:-http://localhost:8080}
+      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY}
+      - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=${EVOLUTION_DATABASE_URL}
+      - DATABASE_SAVE_DATA_INSTANCE=true
+      - DATABASE_SAVE_DATA_NEW_MESSAGE=true
+      - DATABASE_SAVE_MESSAGE_UPDATE=true
+      - DATABASE_SAVE_DATA_CONTACTS=true
+      - DATABASE_SAVE_DATA_CHATS=true
+      - WEBHOOK_GLOBAL_URL=${EVOLUTION_WEBHOOK_URL}
+      - WEBHOOK_GLOBAL_ENABLED=true
+      - WEBHOOK_GLOBAL_WEBHOOK_BY_EVENTS=true
+      - CONFIG_SESSION_PHONE_CLIENT=OndeClick Promo
+      - QRCODE_LIMIT=30
+      - QRCODE_COLOR=#198754
+    volumes:
+      - evolution_instances:/evolution/instances
+      - evolution_store:/evolution/store
+    restart: unless-stopped
+    network_mode: bridge
+
 volumes:
   redis_data:
+    driver: local
+  evolution_instances:
+    driver: local
+  evolution_store:
     driver: local
