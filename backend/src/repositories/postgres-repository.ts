@@ -250,5 +250,4 @@ export class PostgresRepository {
       client.release();
     }
   }
-} // ✅ fechamento final da classe
 
