@@ -1,29 +1,37 @@
+# -------------------------
+# Etapa base
+# -------------------------
 FROM node:20-alpine AS base
+WORKDIR /app
+ENV NODE_ENV=production
 
-# Dependências
+# -------------------------
+# Etapa de dependências
+# -------------------------
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
-WORKDIR /app
-
-COPY package.json ./
+COPY package*.json ./
 RUN npm install --legacy-peer-deps --include=dev
 
-# Build
+# -------------------------
+# Etapa de build
+# -------------------------
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-RUN npm run build:backend || true
+# Compila o backend
+RUN npm run build:backend || npm run build || true
 
-# Production
+# -------------------------
+# Etapa de produção
+# -------------------------
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nodejs
+RUN addgroup --system --gid 1001 nodejs \
+  && adduser --system --uid 1001 nodejs
 
 COPY --from=builder --chown=nodejs:nodejs /app/backend/dist ./backend/dist
 COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
@@ -31,6 +39,8 @@ COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
 
 USER nodejs
 
-EXPOSE 8080
+# Porta padrão do backend
+ENV PORT=3000
+EXPOSE 3000
 
 CMD ["node", "backend/dist/server.js"]
