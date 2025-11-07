@@ -1,11 +1,10 @@
-# Etapa base (imagem leve e compatível com Alpine)
+# Etapa base
 FROM node:20-alpine AS base
 
-# Dependências do sistema
+# Etapa de dependências
+FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
-
-# Copiar pacotes e instalar dependências
 COPY package.json package-lock.json* ./
 RUN npm install --legacy-peer-deps --include=dev
 
@@ -14,37 +13,31 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=base /app/node_modules ./node_modules
 COPY . .
-
-# Desabilitar telemetria e gerar build standalone
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_ENV=production
-
+ENV NEXT_TELEMETRY_DISABLED 1
 RUN npm run build
 
 # Etapa final (produção)
-FROM node:20-alpine AS runner
+FROM base AS runner
 WORKDIR /app
 
-# Variáveis de ambiente de produção
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
+ENV NODE_ENV production
+ENV NEXT_TELEMETRY_DISABLED 1
+ENV PORT 3000
+ENV HOSTNAME "0.0.0.0"
 
-# Criar usuário seguro
 RUN addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nextjs
 
-# Copiar arquivos essenciais
+# Copia arquivos necessários do build
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/package.json ./package.json
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Definir permissões seguras
 USER nextjs
 
 # Expor a porta da aplicação
 EXPOSE 3000
 
-# Rodar o servidor do Next.js standalone
+# O Next standalone já contém o "server.js" correto dentro da pasta .next/standalone
 CMD ["node", "server.js"]
