@@ -11,7 +11,7 @@ RUN npm install --legacy-peer-deps --include=dev
 # Etapa de build
 FROM base AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=base /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED 1
 RUN npm run build
@@ -36,6 +36,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs
 
+# Expor a porta da aplicação
 EXPOSE 3000
 
 # O Next standalone já contém o "server.js" correto dentro da pasta .next/standalone
