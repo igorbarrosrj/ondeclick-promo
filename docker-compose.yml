@@ -29,10 +29,7 @@ services:
     volumes:
       - redis_data:/data
 
-  # -----------------------------
-  # Evolution API (WhatsApp)
-  # -----------------------------
-  evolution-api:
+    evolution-api:
     image: atendai/evolution-api:latest
     container_name: evolution-api
     restart: always
@@ -41,14 +38,13 @@ services:
       PORT: 8080
       LOG_LEVEL: info
 
-      # Banco de dados
+      # Banco de dados (sem DATABASE_URL — o Prisma monta internamente)
       DATABASE_PROVIDER: postgresql
-      DATABASE_HOST: evolution-postgres
+      DATABASE_HOST: evolution-postgres   # nome do serviço do Postgres
       DATABASE_PORT: 5432
       DATABASE_USER: root
       DATABASE_PASSWORD: root
-      DATABASE_NAME: rotacomercial
-      DATABASE_URL: postgresql://root:root@evolution-postgres:5432/rotacomercial
+      DATABASE_NAME: rotacomercial        # nome real do banco
 
       # Redis
       REDIS_ENABLED: "true"
@@ -74,6 +70,7 @@ services:
     volumes:
       - evolution_instances:/evolution/instances
       - evolution_store:/evolution/store
+
 
   # -----------------------------
   # N8N
