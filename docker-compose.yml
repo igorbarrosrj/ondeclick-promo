@@ -21,7 +21,6 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-
   evolution-api:
     image: atendai/evolution-api:latest
     container_name: evolution-api
@@ -35,8 +34,7 @@ services:
       REDIS_URL: redis://default:@evolution-redis:6379/0
       SERVER_URL: http://69.62.101.194:8080
       EVOLUTION_API_URL: http://69.62.101.194:8080
-      EVOLUTION_API_KEY: fa659dd1045ded2dd5afbb04b46a44bc1318375cd87140b761f5efb59fafb469
-      GLOBAL_API_KEY: fa659dd1045ded2dd5afbb04b46a44bc1318375cd87140b761f5efb59fafb469
+      AUTHENTICATION_API_KEY: fa659dd1045ded2dd5afbb04b46a44bc1318375cd87140b761f5efb59fafb469
       USE_AUTHENTICATION_BEARER: "true"
       WEBHOOK_GLOBAL_ENABLED: "false"
       CORS_ORIGIN: "*"
@@ -64,10 +62,12 @@ services:
       N8N_HOST: localhost
       N8N_PORT: 5678
       NODE_ENV: production
+      N8N_SECURE_COOKIE: "false"   # 👈 desativa o cookie HTTPS obrigatório
     volumes:
       - n8n_data:/home/node/.n8n
     depends_on:
       - postgres
+
 
   backend:
     build:
