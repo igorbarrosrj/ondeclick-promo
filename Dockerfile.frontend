@@ -4,6 +4,7 @@
 FROM node:20-alpine AS base
 WORKDIR /app
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED 1
 
 # -------------------------
 # Etapa de dependências
@@ -11,7 +12,14 @@ ENV NODE_ENV=production
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
+
+# Copia apenas os arquivos de dependências
 COPY package*.json ./
+
+# Instala o patch-package globalmente (evita erro 127)
+RUN npm install -g patch-package postinstall-postinstall
+
+# Instala dependências (inclui dev para build completo)
 RUN npm install --legacy-peer-deps --include=dev
 
 # -------------------------
@@ -19,9 +27,14 @@ RUN npm install --legacy-peer-deps --include=dev
 # -------------------------
 FROM base AS builder
 WORKDIR /app
+
+# Copia dependências da etapa anterior
 COPY --from=deps /app/node_modules ./node_modules
+
+# Copia o restante do projeto
 COPY . .
-ENV NEXT_TELEMETRY_DISABLED 1
+
+# Build da aplicação
 RUN npm run build
 
 # -------------------------
@@ -32,21 +45,22 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
 
+# Cria usuário sem privilégios
 RUN addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nextjs
 
-# Copia artefatos do build
+# Copia arquivos necessários da build
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/package.json ./package.json
+RUN mkdir .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs
 
 EXPOSE 3000
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
 
-# Executa o servidor standalone gerado pelo Next.js
+# Inicia o servidor Next.js standalone
 CMD ["node", "server.js"]
