@@ -1,9 +1,7 @@
 version: '3.8'
 
 services:
-  # -----------------------------
   # PostgreSQL
-  # -----------------------------
   postgres:
     image: postgres:15-alpine
     container_name: evolution-postgres
@@ -17,9 +15,7 @@ services:
     ports:
       - "5433:5432"
 
-  # -----------------------------
   # Redis
-  # -----------------------------
   redis:
     image: redis:alpine
     container_name: evolution-redis
@@ -29,7 +25,27 @@ services:
     volumes:
       - redis_data:/data
 
-    evolution-api:
+  # n8n - Automação
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      N8N_BASIC_AUTH_ACTIVE: "true"
+      N8N_BASIC_AUTH_USER: n8n
+      N8N_BASIC_AUTH_PASSWORD: senha123
+      N8N_HOST: localhost
+      N8N_PORT: 5678
+      NODE_ENV: production
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      - postgres
+
+  # Evolution API (WhatsApp)
+  evolution-api:
     image: atendai/evolution-api:latest
     container_name: evolution-api
     restart: always
@@ -40,11 +56,11 @@ services:
 
       # Banco de dados (sem DATABASE_URL — o Prisma monta internamente)
       DATABASE_PROVIDER: postgresql
-      DATABASE_HOST: evolution-postgres   # nome do serviço do Postgres
+      DATABASE_HOST: evolution-postgres
       DATABASE_PORT: 5432
       DATABASE_USER: root
       DATABASE_PASSWORD: root
-      DATABASE_NAME: rotacomercial        # nome real do banco
+      DATABASE_NAME: rotacomercial
 
       # Redis
       REDIS_ENABLED: "true"
@@ -71,31 +87,7 @@ services:
       - evolution_instances:/evolution/instances
       - evolution_store:/evolution/store
 
-
-  # -----------------------------
-  # N8N
-  # -----------------------------
-  n8n:
-    image: n8nio/n8n:latest
-    container_name: n8n
-    restart: always
-    environment:
-      N8N_BASIC_AUTH_ACTIVE: "true"
-      N8N_BASIC_AUTH_USER: n8n
-      N8N_BASIC_AUTH_PASSWORD: senha123
-      N8N_HOST: localhost
-      N8N_PORT: 5678
-      NODE_ENV: production
-    ports:
-      - "5678:5678"
-    volumes:
-      - n8n_data:/home/node/.n8n
-    depends_on:
-      - postgres
-
-  # -----------------------------
-  # Backend (Node/Fastify)
-  # -----------------------------
+  # Backend Fastify
   backend:
     build:
       context: .
@@ -111,16 +103,14 @@ services:
       AUTHENTICATION_API_KEY: fa659dd1045ded2dd5afbb04b46a44bc1318375cd87140b761f5efb59fafb469
       N8N_BASE_URL: http://n8n:5678
     ports:
-      - "3100:3000" # backend disponível na 3100
+      - "3100:3000"
     depends_on:
       - evolution-api
       - redis
       - postgres
       - n8n
 
-  # -----------------------------
-  # Frontend (Next.js)
-  # -----------------------------
+  # Frontend Next.js
   frontend:
     build:
       context: .
@@ -128,21 +118,18 @@ services:
     container_name: ondeclick-frontend
     restart: always
     environment:
-      NODE_ENV: production
-      PORT: 3000
-      HOSTNAME: 0.0.0.0
-      NEXT_PUBLIC_SUPABASE_URL: ""
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ""
-      NEXT_PUBLIC_APP_URL: "http://69.62.101.194:3001"
-      NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY: ""
+      - NODE_ENV=production
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+      - NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY=${NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY}
     ports:
       - "3001:3000"
     depends_on:
       - backend
 
-# -----------------------------
-# Volumes
-# -----------------------------
 volumes:
   postgres_data:
   redis_data:
