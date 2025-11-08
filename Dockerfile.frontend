@@ -3,8 +3,8 @@
 # -------------------------
 FROM node:20-alpine AS base
 
-# Corrige DNS dentro do container (garante internet no build)
-RUN echo "nameserver 8.8.8.8" > /etc/resolv.conf
+# Corrige DNS dentro do container (modo compatível)
+RUN echo "nameserver 8.8.8.8" | tee /etc/resolv.conf > /dev/null || true
 
 # Adiciona dependências básicas e otimiza cache
 RUN apk add --no-cache libc6-compat curl
@@ -14,7 +14,7 @@ WORKDIR /app
 # Copia dependências
 COPY package*.json ./
 
-# Instala pacotes com legacy peer deps
+# Instala pacotes (mantém compatibilidade com dependências antigas)
 RUN npm install --legacy-peer-deps --include=dev
 
 # -------------------------
@@ -25,12 +25,11 @@ WORKDIR /app
 
 COPY . .
 
-# Ignora fonts externas e falhas de rede
+# Ignora falha de fontes externas (Google Fonts) e segue o build
 ENV NEXT_DISABLE_FONT_DOWNLOADS=1
 ENV NEXT_FONT_IGNORE_MISSING_GLYPHS=1
 ENV NODE_ENV=production
 
-# Tenta buildar, mesmo sem Google Fonts
 RUN npm run build || echo "⚠️ Build continuou sem fontes externas"
 
 # -------------------------
@@ -48,6 +47,5 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/node_modules ./node_modules
 
 USER nodejs
-
 EXPOSE 3000
 CMD ["npm", "start"]
