@@ -14,6 +14,7 @@ const nextConfig = {
     unoptimized: true,
   },
 
+  // 🔥 Impede Next.js de baixar fontes do Google durante o build (resolve travamentos e lentidão)
   experimental: {
     optimizeCss: true,
   },
@@ -22,7 +23,7 @@ const nextConfig = {
     disableNextFontDownloads: true,
   },
 
-  // 🔥 Recomendado para VPSs lentas: reduz paralelismo de compilação
+  // ⚙️ Otimiza performance em VPSs com CPU limitada
   webpack: (config) => {
     config.infrastructureLogging = { level: 'error' };
     config.optimization.minimize = true;

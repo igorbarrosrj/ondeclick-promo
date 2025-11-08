@@ -1,55 +1,41 @@
-version: '3.8'
+version: "3.9"
 
 services:
-  # PostgreSQL
-  postgres:
+  evolution-postgres:
     image: postgres:15-alpine
     container_name: evolution-postgres
     restart: always
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
-      POSTGRES_DB: evolution
+      POSTGRES_DB: rotacomercial
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - evolution_postgres_data:/var/lib/postgresql/data
+    networks:
+      - evolution_net
     ports:
       - "5433:5432"
 
-  # Redis
-  redis:
+  evolution-redis:
     image: redis:alpine
     container_name: evolution-redis
     restart: always
+    networks:
+      - evolution_net
     ports:
       - "6379:6379"
-    volumes:
-      - redis_data:/data
 
-  # n8n - Automação
-  n8n:
-    image: n8nio/n8n:latest
-    container_name: n8n
-    restart: always
-    ports:
-      - "5678:5678"
-    environment:
-      N8N_BASIC_AUTH_ACTIVE: "true"
-      N8N_BASIC_AUTH_USER: n8n
-      N8N_BASIC_AUTH_PASSWORD: senha123
-      N8N_HOST: localhost
-      N8N_PORT: 5678
-      NODE_ENV: production
-      N8N_SECURE_COOKIE: "false"
-    volumes:
-      - n8n_data:/home/node/.n8n
-    depends_on:
-      - postgres
-
-  # Evolution API (WhatsApp)
   evolution-api:
     image: atendai/evolution-api:latest
     container_name: evolution-api
     restart: always
+    depends_on:
+      - evolution-postgres
+      - evolution-redis
+    networks:
+      - evolution_net
+    ports:
+      - "8080:8080"
     environment:
       NODE_ENV: production
       PORT: 8080
@@ -61,8 +47,8 @@ services:
       DATABASE_PORT: 5432
       DATABASE_USER: root
       DATABASE_PASSWORD: root
-      DATABASE_NAME: evolution
-      DATABASE_URL: postgresql://root:root@evolution-postgres:5432/evolution
+      DATABASE_NAME: rotacomercial
+      DATABASE_URL: postgresql://root:root@evolution-postgres:5432/rotacomercial
 
       # Redis
       REDIS_ENABLED: "true"
@@ -80,61 +66,66 @@ services:
       CORS_METHODS: POST,GET,PUT,DELETE
       CORS_CREDENTIALS: "true"
 
-    ports:
-      - "8080:8080"
-    depends_on:
-      - postgres
-      - redis
     volumes:
       - evolution_instances:/evolution/instances
       - evolution_store:/evolution/store
 
-  # Backend Fastify
-  backend:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
-    container_name: ondeclick-backend
-    restart: always
-    environment:
-      NODE_ENV: production
-      PORT: 3000
-      DATABASE_URL: postgresql://root:root@evolution-postgres:5432/evolution
-      REDIS_URL: redis://evolution-redis:6379
-      EVOLUTION_API_URL: http://evolution-api:8080
-      AUTHENTICATION_API_KEY: fa659dd1045ded2dd5afbb04b46a44bc1318375cd87140b761f5efb59fafb469
-      N8N_BASE_URL: http://n8n:5678
-    ports:
-      - "3100:3000"
-    depends_on:
-      - evolution-api
-      - redis
-      - postgres
-      - n8n
-
-  # Frontend Next.js
   frontend:
     build:
       context: .
       dockerfile: Dockerfile.frontend
-    container_name: ondeclick-frontend
+    container_name: frontend
     restart: always
+    depends_on:
+      - evolution-api
+    networks:
+      - evolution_net
+    ports:
+      - "3010:3000"  # Evita conflito com outro container na porta 3000
     environment:
       NODE_ENV: production
-      PORT: 3000
-      HOSTNAME: 0.0.0.0
-      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
-      NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY: ${NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY}
-    ports:
-      - "3001:3000"
+      NEXT_DISABLE_FONT_DOWNLOADS: "1"
+      NEXT_PUBLIC_APP_URL: http://69.62.101.194:3010
+      NEXT_PUBLIC_SUPABASE_URL: ""
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ""
+      NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY: ""
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: always
     depends_on:
-      - backend
+      - evolution-postgres
+      - evolution-redis
+    networks:
+      - evolution_net
+    ports:
+      - "5678:5678"
+    environment:
+      # Timezone e Host
+      GENERIC_TIMEZONE: America/Sao_Paulo
+      N8N_HOST: 69.62.101.194
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      WEBHOOK_URL: http://69.62.101.194:5678/
+
+      # Banco de Dados (usa o mesmo do Evolution)
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: evolution-postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_USER: root
+      DB_POSTGRESDB_PASSWORD: root
+      DB_POSTGRESDB_DATABASE: rotacomercial
+
+      # Redis opcional (pra filas e cache)
+      QUEUE_BULL_REDIS_HOST: evolution-redis
+      QUEUE_BULL_REDIS_PORT: 6379
 
 volumes:
-  postgres_data:
-  redis_data:
-  n8n_data:
+  evolution_postgres_data:
   evolution_instances:
   evolution_store:
+
+networks:
+  evolution_net:
+    driver: bridge
