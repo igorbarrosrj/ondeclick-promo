@@ -9,11 +9,18 @@ services:
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
-      POSTGRES_DB: rotacomercial
+      POSTGRES_DB: evolution
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d evolution"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - evolution-network
 
   # Redis
   redis:
@@ -24,6 +31,13 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - evolution-network
 
   # n8n - Automação
   n8n:
@@ -39,10 +53,19 @@ services:
       N8N_HOST: localhost
       N8N_PORT: 5678
       NODE_ENV: production
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: evolution-postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: evolution
+      DB_POSTGRESDB_USER: root
+      DB_POSTGRESDB_PASSWORD: root
     volumes:
       - n8n_data:/home/node/.n8n
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    networks:
+      - evolution-network
 
   # Evolution API (WhatsApp)
   evolution-api:
@@ -53,39 +76,38 @@ services:
       NODE_ENV: production
       PORT: 8080
       LOG_LEVEL: info
-
-      # Banco de dados (sem DATABASE_URL — o Prisma monta internamente)
+      
+      # Banco de dados
       DATABASE_PROVIDER: postgresql
-      DATABASE_HOST: evolution-postgres
-      DATABASE_PORT: 5432
-      DATABASE_USER: root
-      DATABASE_PASSWORD: root
-      DATABASE_NAME: rotacomercial
-
+      DATABASE_URL: postgresql://root:root@evolution-postgres:5432/evolution
+      
       # Redis
       REDIS_ENABLED: "true"
-      REDIS_URL: redis://default:@evolution-redis:6379/0
-
+      REDIS_URL: redis://evolution-redis:6379/0
+      
       # API / Autenticação
       SERVER_URL: http://69.62.101.194:8080
       EVOLUTION_API_URL: http://69.62.101.194:8080
       AUTHENTICATION_API_KEY: fa659dd1045ded2dd5afbb04b46a44bc1318375cd87140b761f5efb59fafb469
       USE_AUTHENTICATION_BEARER: "true"
-
+      
       # Webhook / CORS
       WEBHOOK_GLOBAL_ENABLED: "false"
       CORS_ORIGIN: "*"
       CORS_METHODS: POST,GET,PUT,DELETE
       CORS_CREDENTIALS: "true"
-
     ports:
       - "8080:8080"
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - evolution_instances:/evolution/instances
       - evolution_store:/evolution/store
+    networks:
+      - evolution-network
 
   # Backend Fastify
   backend:
@@ -97,7 +119,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      DATABASE_URL: postgresql://root:root@evolution-postgres:5432/rotacomercial
+      DATABASE_URL: postgresql://root:root@evolution-postgres:5432/evolution
       REDIS_URL: redis://evolution-redis:6379
       EVOLUTION_API_URL: http://evolution-api:8080
       AUTHENTICATION_API_KEY: fa659dd1045ded2dd5afbb04b46a44bc1318375cd87140b761f5efb59fafb469
@@ -105,10 +127,16 @@ services:
     ports:
       - "3100:3000"
     depends_on:
-      - evolution-api
-      - redis
-      - postgres
-      - n8n
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      evolution-api:
+        condition: service_started
+      n8n:
+        condition: service_started
+    networks:
+      - evolution-network
 
   # Frontend Next.js
   frontend:
@@ -118,17 +146,20 @@ services:
     container_name: ondeclick-frontend
     restart: always
     environment:
-      - NODE_ENV=production
-      - PORT=3000
-      - HOSTNAME=0.0.0.0
-      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
-      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
-      - NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY=${NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY}
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+      NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY: ${NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY}
     ports:
       - "3001:3000"
     depends_on:
-      - backend
+      backend:
+        condition: service_started
+    networks:
+      - evolution-network
 
 volumes:
   postgres_data:
@@ -136,3 +167,7 @@ volumes:
   n8n_data:
   evolution_instances:
   evolution_store:
+
+networks:
+  evolution-network:
+    driver: bridge
