@@ -28,7 +28,7 @@ services:
   evolution-api:
     image: atendai/evolution-api:latest
     container_name: evolution-api
-    restart: always
+    restart: on-failure
     depends_on:
       - evolution-postgres
       - evolution-redis
@@ -69,6 +69,11 @@ services:
     volumes:
       - evolution_instances:/evolution/instances
       - evolution_store:/evolution/store
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h evolution-postgres -p 5432 -U root || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   frontend:
     build:
@@ -81,7 +86,7 @@ services:
     networks:
       - evolution_net
     ports:
-      - "3010:3000"  # Evita conflito com outro container na porta 3000
+      - "3010:3000"
     environment:
       NODE_ENV: production
       NEXT_DISABLE_FONT_DOWNLOADS: "1"
@@ -102,22 +107,18 @@ services:
     ports:
       - "5678:5678"
     environment:
-      # Timezone e Host
       GENERIC_TIMEZONE: America/Sao_Paulo
       N8N_HOST: 69.62.101.194
       N8N_PORT: 5678
       N8N_PROTOCOL: http
+      N8N_SECURE_COOKIE: false
       WEBHOOK_URL: http://69.62.101.194:5678/
-
-      # Banco de Dados (usa o mesmo do Evolution)
       DB_TYPE: postgresdb
       DB_POSTGRESDB_HOST: evolution-postgres
       DB_POSTGRESDB_PORT: 5432
       DB_POSTGRESDB_USER: root
       DB_POSTGRESDB_PASSWORD: root
       DB_POSTGRESDB_DATABASE: rotacomercial
-
-      # Redis opcional (pra filas e cache)
       QUEUE_BULL_REDIS_HOST: evolution-redis
       QUEUE_BULL_REDIS_PORT: 6379
 
