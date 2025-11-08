@@ -1,140 +1,79 @@
-version: '3.8'
-
 services:
-  # PostgreSQL
-  postgres:
+  evolution-postgres:
     image: postgres:15-alpine
     container_name: evolution-postgres
     restart: always
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
-      POSTGRES_DB: evolution
+      POSTGRES_DB: rotacomercial
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - evolution_postgres_data:/var/lib/postgresql/data
     ports:
       - "5433:5432"
 
-  # Redis
-  redis:
+  evolution-redis:
     image: redis:alpine
     container_name: evolution-redis
     restart: always
     ports:
       - "6379:6379"
-    volumes:
-      - redis_data:/data
 
-  # n8n - Automação
-  n8n:
-    image: n8nio/n8n:latest
-    container_name: n8n
-    restart: always
-    ports:
-      - "5678:5678"
-    environment:
-      N8N_BASIC_AUTH_ACTIVE: "true"
-      N8N_BASIC_AUTH_USER: n8n
-      N8N_BASIC_AUTH_PASSWORD: senha123
-      N8N_HOST: localhost
-      N8N_PORT: 5678
-      NODE_ENV: production
-      N8N_SECURE_COOKIE: "false"
-    volumes:
-      - n8n_data:/home/node/.n8n
-    depends_on:
-      - postgres
-
-  # Evolution API (WhatsApp)
   evolution-api:
     image: atendai/evolution-api:latest
     container_name: evolution-api
     restart: always
+    depends_on:
+      - evolution-postgres
+      - evolution-redis
+    ports:
+      - "8080:8080"
     environment:
       NODE_ENV: production
       PORT: 8080
       LOG_LEVEL: info
 
-      # Banco de dados
       DATABASE_PROVIDER: postgresql
       DATABASE_HOST: evolution-postgres
       DATABASE_PORT: 5432
       DATABASE_USER: root
       DATABASE_PASSWORD: root
-      DATABASE_NAME: evolution
-      DATABASE_URL: postgresql://root:root@evolution-postgres:5432/evolution
+      DATABASE_NAME: rotacomercial
+      DATABASE_URL: postgresql://root:root@evolution-postgres:5432/rotacomercial
 
-      # Redis
       REDIS_ENABLED: "true"
       REDIS_URL: redis://default:@evolution-redis:6379/0
 
-      # API / Autenticação
       SERVER_URL: http://69.62.101.194:8080
       EVOLUTION_API_URL: http://69.62.101.194:8080
       AUTHENTICATION_API_KEY: fa659dd1045ded2dd5afbb04b46a44bc1318375cd87140b761f5efb59fafb469
       USE_AUTHENTICATION_BEARER: "true"
 
-      # Webhook / CORS
       WEBHOOK_GLOBAL_ENABLED: "false"
       CORS_ORIGIN: "*"
       CORS_METHODS: POST,GET,PUT,DELETE
       CORS_CREDENTIALS: "true"
 
-    ports:
-      - "8080:8080"
-    depends_on:
-      - postgres
-      - redis
     volumes:
       - evolution_instances:/evolution/instances
       - evolution_store:/evolution/store
+    network_mode: "host"  # 🔥 garante internet e comunicação local (mantém comportamento antigo)
 
-  # Backend Fastify
-  backend:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
-    container_name: ondeclick-backend
-    restart: always
-    environment:
-      NODE_ENV: production
-      PORT: 3000
-      DATABASE_URL: postgresql://root:root@evolution-postgres:5432/evolution
-      REDIS_URL: redis://evolution-redis:6379
-      EVOLUTION_API_URL: http://evolution-api:8080
-      AUTHENTICATION_API_KEY: fa659dd1045ded2dd5afbb04b46a44bc1318375cd87140b761f5efb59fafb469
-      N8N_BASE_URL: http://n8n:5678
-    ports:
-      - "3100:3000"
-    depends_on:
-      - evolution-api
-      - redis
-      - postgres
-      - n8n
-
-  # Frontend Next.js
   frontend:
     build:
       context: .
       dockerfile: Dockerfile.frontend
-    container_name: ondeclick-frontend
+    container_name: frontend
     restart: always
+    network_mode: "host"  # 🔥 o segredo pra ter internet no build e no app
     environment:
       NODE_ENV: production
-      PORT: 3000
-      HOSTNAME: 0.0.0.0
-      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
-      NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY: ${NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY}
+      NEXT_PUBLIC_APP_URL: http://69.62.101.194:3000
+      NEXT_DISABLE_FONT_DOWNLOADS: "1"
     ports:
-      - "3001:3000"
-    depends_on:
-      - backend
+      - "3000:3000"
 
 volumes:
-  postgres_data:
-  redis_data:
-  n8n_data:
+  evolution_postgres_data:
   evolution_instances:
   evolution_store:
