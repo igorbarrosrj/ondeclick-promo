@@ -3,32 +3,20 @@
 # -------------------------
 FROM node:20-alpine AS base
 
-# Corrige possíveis DNS lentos dentro do container (sem travar se for read-only)
-RUN echo "nameserver 8.8.8.8" | tee /etc/resolv.conf > /dev/null || true
-
-# Instala dependências básicas (necessárias pro build)
 RUN apk add --no-cache libc6-compat curl
-
 WORKDIR /app
 
-# -------------------------
-# DEPS: Instala dependências NPM
-# -------------------------
-FROM base AS deps
 COPY package*.json ./
 RUN npm install --legacy-peer-deps --include=dev
 
 # -------------------------
 # BUILDER: Compila o projeto Next.js
 # -------------------------
-FROM deps AS builder
+FROM base AS builder
 COPY . .
-
-# 🚫 Evita downloads de fontes no build (mesmo que Next mude comportamento futuro)
-ENV NEXT_DISABLE_FONT_DOWNLOADS=1
 ENV NODE_ENV=production
+ENV NEXT_DISABLE_FONT_DOWNLOADS=1
 
-# 🔥 Build otimizado: ignora travas de fontes e falhas não críticas
 RUN npm run build || echo "⚠️ Build continuou sem fontes externas"
 
 # -------------------------
@@ -37,20 +25,13 @@ RUN npm run build || echo "⚠️ Build continuou sem fontes externas"
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-# Cria usuário não-root
-RUN addgroup --system --gid 1001 nodejs \
-  && adduser --system --uid 1001 nodejs
+RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nodejs
 
-# Copia apenas o necessário pro container final
 COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nodejs:nodejs /app/.next ./.next
 COPY --from=builder --chown=nodejs:nodejs /app/public ./public
 COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
 
 USER nodejs
-
 EXPOSE 3000
-ENV PORT=3000
-
-# Comando padrão
 CMD ["npm", "start"]
