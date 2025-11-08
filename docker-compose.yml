@@ -1,6 +1,9 @@
 version: "3.9"
 
 services:
+  # --------------------------------------------
+  # 🟢 PostgreSQL (Banco de dados principal)
+  # --------------------------------------------
   evolution-postgres:
     image: postgres:15-alpine
     container_name: evolution-postgres
@@ -15,7 +18,15 @@ services:
       - evolution_net
     ports:
       - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d rotacomercial"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
+  # --------------------------------------------
+  # 🔴 Redis (Cache e filas)
+  # --------------------------------------------
   evolution-redis:
     image: redis:alpine
     container_name: evolution-redis
@@ -25,13 +36,18 @@ services:
     ports:
       - "6379:6379"
 
+  # --------------------------------------------
+  # 🟡 Evolution API
+  # --------------------------------------------
   evolution-api:
     image: atendai/evolution-api:latest
     container_name: evolution-api
     restart: on-failure
     depends_on:
-      - evolution-postgres
-      - evolution-redis
+      evolution-postgres:
+        condition: service_healthy
+      evolution-redis:
+        condition: service_started
     networks:
       - evolution_net
     ports:
@@ -69,12 +85,13 @@ services:
     volumes:
       - evolution_instances:/evolution/instances
       - evolution_store:/evolution/store
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h evolution-postgres -p 5432 -U root || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
 
+  # --------------------------------------------
+  # 🟣 Frontend (Next.js)
+  # --------------------------------------------
   frontend:
     build:
       context: .
@@ -94,14 +111,22 @@ services:
       NEXT_PUBLIC_SUPABASE_URL: ""
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ""
       NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY: ""
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
 
+  # --------------------------------------------
+  # 🔵 N8N (Automação)
+  # --------------------------------------------
   n8n:
     image: n8nio/n8n:latest
     container_name: n8n
     restart: always
     depends_on:
-      - evolution-postgres
-      - evolution-redis
+      evolution-postgres:
+        condition: service_healthy
+      evolution-redis:
+        condition: service_started
     networks:
       - evolution_net
     ports:
@@ -122,6 +147,9 @@ services:
       QUEUE_BULL_REDIS_HOST: evolution-redis
       QUEUE_BULL_REDIS_PORT: 6379
 
+# --------------------------------------------
+# Volumes e rede
+# --------------------------------------------
 volumes:
   evolution_postgres_data:
   evolution_instances:
