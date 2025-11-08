@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   evolution-postgres:
     image: postgres:15-alpine
@@ -9,6 +11,8 @@ services:
       POSTGRES_DB: rotacomercial
     volumes:
       - evolution_postgres_data:/var/lib/postgresql/data
+    networks:
+      - evolution_net
     ports:
       - "5433:5432"
 
@@ -16,6 +20,8 @@ services:
     image: redis:alpine
     container_name: evolution-redis
     restart: always
+    networks:
+      - evolution_net
     ports:
       - "6379:6379"
 
@@ -26,6 +32,8 @@ services:
     depends_on:
       - evolution-postgres
       - evolution-redis
+    networks:
+      - evolution_net
     ports:
       - "8080:8080"
     environment:
@@ -61,9 +69,6 @@ services:
     volumes:
       - evolution_instances:/evolution/instances
       - evolution_store:/evolution/store
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
 
   frontend:
     build:
@@ -71,22 +76,56 @@ services:
       dockerfile: Dockerfile.frontend
     container_name: frontend
     restart: always
+    depends_on:
+      - evolution-api
+    networks:
+      - evolution_net
     ports:
-      - "3000:3000"
+      - "3010:3000"  # Evita conflito com outro container na porta 3000
     environment:
       NODE_ENV: production
       NEXT_DISABLE_FONT_DOWNLOADS: "1"
-      NEXT_PUBLIC_APP_URL: http://69.62.101.194:3000
+      NEXT_PUBLIC_APP_URL: http://69.62.101.194:3010
       NEXT_PUBLIC_SUPABASE_URL: ""
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ""
       NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY: ""
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: always
     depends_on:
-      - evolution-api
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
+      - evolution-postgres
+      - evolution-redis
+    networks:
+      - evolution_net
+    ports:
+      - "5678:5678"
+    environment:
+      # Timezone e Host
+      GENERIC_TIMEZONE: America/Sao_Paulo
+      N8N_HOST: 69.62.101.194
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      WEBHOOK_URL: http://69.62.101.194:5678/
+
+      # Banco de Dados (usa o mesmo do Evolution)
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: evolution-postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_USER: root
+      DB_POSTGRESDB_PASSWORD: root
+      DB_POSTGRESDB_DATABASE: rotacomercial
+
+      # Redis opcional (pra filas e cache)
+      QUEUE_BULL_REDIS_HOST: evolution-redis
+      QUEUE_BULL_REDIS_PORT: 6379
 
 volumes:
   evolution_postgres_data:
   evolution_instances:
   evolution_store:
+
+networks:
+  evolution_net:
+    driver: bridge
