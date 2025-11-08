@@ -1,144 +1,140 @@
 version: '3.8'
 
 services:
-  # Frontend Next.js
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
-    ports:
-      - "0.0.0.0:3000:3000"
+  # PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: evolution-postgres
+    restart: always
     environment:
-      - PORT=3000
-      - HOSTNAME=0.0.0.0
-      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
-      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
-      - NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY=${NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY}
-      - NODE_ENV=production
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: evolution
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
+  # Redis
+  redis:
+    image: redis:alpine
+    container_name: evolution-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # n8n - Automação
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      N8N_BASIC_AUTH_ACTIVE: "true"
+      N8N_BASIC_AUTH_USER: n8n
+      N8N_BASIC_AUTH_PASSWORD: senha123
+      N8N_HOST: localhost
+      N8N_PORT: 5678
+      NODE_ENV: production
+      N8N_SECURE_COOKIE: "false"
+    volumes:
+      - n8n_data:/home/node/.n8n
     depends_on:
-      - backend
+      - postgres
+
+  # Evolution API (WhatsApp)
+  evolution-api:
+    image: atendai/evolution-api:latest
+    container_name: evolution-api
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      LOG_LEVEL: info
+
+      # Banco de dados
+      DATABASE_PROVIDER: postgresql
+      DATABASE_HOST: evolution-postgres
+      DATABASE_PORT: 5432
+      DATABASE_USER: root
+      DATABASE_PASSWORD: root
+      DATABASE_NAME: evolution
+      DATABASE_URL: postgresql://root:root@evolution-postgres:5432/evolution
+
+      # Redis
+      REDIS_ENABLED: "true"
+      REDIS_URL: redis://default:@evolution-redis:6379/0
+
+      # API / Autenticação
+      SERVER_URL: http://69.62.101.194:8080
+      EVOLUTION_API_URL: http://69.62.101.194:8080
+      AUTHENTICATION_API_KEY: fa659dd1045ded2dd5afbb04b46a44bc1318375cd87140b761f5efb59fafb469
+      USE_AUTHENTICATION_BEARER: "true"
+
+      # Webhook / CORS
+      WEBHOOK_GLOBAL_ENABLED: "false"
+      CORS_ORIGIN: "*"
+      CORS_METHODS: POST,GET,PUT,DELETE
+      CORS_CREDENTIALS: "true"
+
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
       - redis
-    restart: unless-stopped
-    network_mode: bridge
+    volumes:
+      - evolution_instances:/evolution/instances
+      - evolution_store:/evolution/store
 
   # Backend Fastify
   backend:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    expose:
-      - "4000"
+    container_name: ondeclick-backend
+    restart: always
     environment:
-      - NODE_ENV=${NODE_ENV:-production}
-      - PORT=${PORT:-4000}
-      - LOG_LEVEL=${LOG_LEVEL:-info}
-      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
-      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - N8N_BASE_URL=${N8N_BASE_URL}
-      - N8N_WEBHOOK_CAMPAIGN_SEND=${N8N_WEBHOOK_CAMPAIGN_SEND}
-      - N8N_WEBHOOK_WHATSAPP_REPLY=${N8N_WEBHOOK_WHATSAPP_REPLY}
-      - N8N_WEBHOOK_WHATSAPP_AUTH=${N8N_WEBHOOK_WHATSAPP_AUTH}
-      - N8N_WEBHOOK_CREATE_AD_GROUP=${N8N_WEBHOOK_CREATE_AD_GROUP}
-      - N8N_WEBHOOK_BILLING=${N8N_WEBHOOK_BILLING}
-      - N8N_WEBHOOK_MERCADOPAGO=${N8N_WEBHOOK_MERCADOPAGO}
-      - N8N_WEBHOOK_HEALTH=${N8N_WEBHOOK_HEALTH}
-      - WHATSAPP_BASE_URL=${WHATSAPP_BASE_URL}
-      - WHATSAPP_TOKEN=${WHATSAPP_TOKEN}
-      - WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID}
-      - WHATSAPP_BUSINESS_ACCOUNT_ID=${WHATSAPP_BUSINESS_ACCOUNT_ID}
-      - WHATSAPP_WEBHOOK_VERIFY_TOKEN=${WHATSAPP_WEBHOOK_VERIFY_TOKEN}
-      - MERCADOPAGO_ACCESS_TOKEN=${MERCADOPAGO_ACCESS_TOKEN}
-      - MERCADOPAGO_PUBLIC_KEY=${MERCADOPAGO_PUBLIC_KEY}
-      - MERCADOPAGO_WEBHOOK_SECRET=${MERCADOPAGO_WEBHOOK_SECRET}
-      - META_APP_ID=${META_APP_ID}
-      - META_APP_SECRET=${META_APP_SECRET}
-      - META_REDIRECT_URI=${META_REDIRECT_URI}
-      - META_LONG_LIVED_TOKEN_SECRET=${META_LONG_LIVED_TOKEN_SECRET}
-      - REDIS_URL=redis://redis:6379
-      - JWT_SIGNING_KEY=${JWT_SIGNING_KEY}
-      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
-      - QUEUE_PREFIX=${QUEUE_PREFIX:-ondeclick}
-      - FEATURE_TIKTOK_ENABLED=${FEATURE_TIKTOK_ENABLED:-false}
-      - RATE_LIMIT_MAX=${RATE_LIMIT_MAX:-200}
-      - RATE_LIMIT_TIME_WINDOW_MS=${RATE_LIMIT_TIME_WINDOW_MS:-60000}
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://root:root@evolution-postgres:5432/evolution
+      REDIS_URL: redis://evolution-redis:6379
+      EVOLUTION_API_URL: http://evolution-api:8080
+      AUTHENTICATION_API_KEY: fa659dd1045ded2dd5afbb04b46a44bc1318375cd87140b761f5efb59fafb469
+      N8N_BASE_URL: http://n8n:5678
+    ports:
+      - "3100:3000"
     depends_on:
+      - evolution-api
       - redis
-    restart: unless-stopped
+      - postgres
+      - n8n
 
-  # Worker para filas
-  worker:
+  # Frontend Next.js
+  frontend:
     build:
       context: .
-      dockerfile: Dockerfile.worker
+      dockerfile: Dockerfile.frontend
+    container_name: ondeclick-frontend
+    restart: always
     environment:
-      - NODE_ENV=${NODE_ENV:-production}
-      - LOG_LEVEL=${LOG_LEVEL:-info}
-      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
-      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - N8N_BASE_URL=${N8N_BASE_URL}
-      - N8N_WEBHOOK_CAMPAIGN_SEND=${N8N_WEBHOOK_CAMPAIGN_SEND}
-      - N8N_WEBHOOK_WHATSAPP_REPLY=${N8N_WEBHOOK_WHATSAPP_REPLY}
-      - N8N_WEBHOOK_WHATSAPP_AUTH=${N8N_WEBHOOK_WHATSAPP_AUTH}
-      - N8N_WEBHOOK_CREATE_AD_GROUP=${N8N_WEBHOOK_CREATE_AD_GROUP}
-      - N8N_WEBHOOK_BILLING=${N8N_WEBHOOK_BILLING}
-      - N8N_WEBHOOK_MERCADOPAGO=${N8N_WEBHOOK_MERCADOPAGO}
-      - N8N_WEBHOOK_HEALTH=${N8N_WEBHOOK_HEALTH}
-      - WHATSAPP_BASE_URL=${WHATSAPP_BASE_URL}
-      - WHATSAPP_TOKEN=${WHATSAPP_TOKEN}
-      - WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID}
-      - WHATSAPP_BUSINESS_ACCOUNT_ID=${WHATSAPP_BUSINESS_ACCOUNT_ID}
-      - META_APP_ID=${META_APP_ID}
-      - META_APP_SECRET=${META_APP_SECRET}
-      - META_REDIRECT_URI=${META_REDIRECT_URI}
-      - META_LONG_LIVED_TOKEN_SECRET=${META_LONG_LIVED_TOKEN_SECRET}
-      - REDIS_URL=redis://redis:6379
-      - JWT_SIGNING_KEY=${JWT_SIGNING_KEY}
-      - QUEUE_PREFIX=${QUEUE_PREFIX:-ondeclick}
-    depends_on:
-      - redis
-      - backend
-    restart: unless-stopped
-
-  # Redis para cache e filas
-  redis:
-    image: redis:7-alpine
-    command: redis-server --appendonly yes
-    expose:
-      - "6379"
-    volumes:
-      - redis_data:/data
-    restart: unless-stopped
-
-  # Evolution API para WhatsApp
-  evolution-api:
-    image: atendai/evolution-api:latest
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+      NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY: ${NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY}
     ports:
-      - "8080:8080"
-    environment:
-      - SERVER_URL=${EVOLUTION_SERVER_URL:-http://localhost:8080}
-      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY}
-      - DATABASE_ENABLED=false
-      - WEBHOOK_GLOBAL_URL=${EVOLUTION_WEBHOOK_URL}
-      - WEBHOOK_GLOBAL_ENABLED=true
-      - WEBHOOK_GLOBAL_WEBHOOK_BY_EVENTS=true
-      - CONFIG_SESSION_PHONE_CLIENT=OndeClick Promo
-      - QRCODE_LIMIT=30
-      - QRCODE_COLOR=#198754
-    volumes:
-      - evolution_instances:/evolution/instances
-      - evolution_store:/evolution/store
-    restart: unless-stopped
-    network_mode: bridge
+      - "3001:3000"
+    depends_on:
+      - backend
 
 volumes:
+  postgres_data:
   redis_data:
-    driver: local
+  n8n_data:
   evolution_instances:
-    driver: local
   evolution_store:
-    driver: local
