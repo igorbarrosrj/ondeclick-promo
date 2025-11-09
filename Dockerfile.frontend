@@ -16,7 +16,9 @@ RUN npm install --legacy-peer-deps --include=dev
 COPY . .
 ENV NODE_ENV=production
 ENV NEXT_DISABLE_FONT_DOWNLOADS=1
-RUN npm run build || echo "⚠️ Build continuou sem fontes externas"
+
+# --- CORREÇÃO: Removido o '|| echo ...' para que o build falhe se houver um erro ---
+RUN npm run build
 
 #
 # -----------------
@@ -28,10 +30,8 @@ WORKDIR /app
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 node-runner
 
-# --- CORREÇÃO AQUI ---
 # As linhas de COPY foram corrigidas para copiar os arquivos
 # para os locais corretos e usar um ponto final (.) no .next
-
 COPY --from=builder --chown=node-runner:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=node-runner:nodejs /app/.next ./.next
 COPY --from=builder --chown=node-runner:nodejs /app/public ./public
