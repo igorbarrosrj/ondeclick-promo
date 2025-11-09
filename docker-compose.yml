@@ -143,7 +143,9 @@ services:
       DB_POSTGRESDB_PORT: 5432
       DB_POSTGRESDB_USER: root
       DB_POSTGRESDB_PASSWORD: root
-      DB_POSTGRESDB_DATABASE: rotacomercial
+      # --- CORREÇÃO AQUI ---
+      # Altera o nome do banco para não conflitar com a Evolution API
+      DB_POSTGRESDB_DATABASE: n8n_db
       QUEUE_BULL_REDIS_HOST: evolution-redis
       QUEUE_BULL_REDIS_PORT: 6379
 
