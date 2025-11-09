@@ -3,8 +3,9 @@ version: "3.9"
 services:
   # --------------------------------------------
   # 🟢 PostgreSQL (Banco de dados principal)
+  # --- CORREÇÃO: Renomeado de 'evolution-postgres' para 'postgres' ---
   # --------------------------------------------
-  evolution-postgres:
+  postgres:
     image: postgres:15-alpine
     container_name: evolution-postgres
     restart: always
@@ -44,7 +45,7 @@ services:
     container_name: evolution-api
     restart: on-failure
     depends_on:
-      evolution-postgres:
+      postgres: # <--- CORREÇÃO: Atualizado
         condition: service_healthy
       evolution-redis:
         condition: service_started
@@ -59,12 +60,12 @@ services:
 
       # Banco de dados
       DATABASE_PROVIDER: postgresql
-      DATABASE_HOST: evolution-postgres
+      DATABASE_HOST: postgres # <--- CORREÇÃO: Atualizado
       DATABASE_PORT: 5432
       DATABASE_USER: root
       DATABASE_PASSWORD: root
       DATABASE_NAME: rotacomercial
-      DATABASE_URL: postgresql://root:root@evolution-postgres:5432/rotacomercial
+      DATABASE_URL: postgresql://root:root@postgres:5432/rotacomercial # <--- CORREÇÃO: Atualizado
 
       # Redis
       REDIS_ENABLED: "true"
@@ -123,7 +124,7 @@ services:
     container_name: n8n
     restart: always
     depends_on:
-      evolution-postgres:
+      postgres: # <--- CORREÇÃO: Atualizado
         condition: service_healthy
       evolution-redis:
         condition: service_started
@@ -139,19 +140,17 @@ services:
       N8N_SECURE_COOKIE: false
       WEBHOOK_URL: http://69.62.101.194:5678/
       DB_TYPE: postgresdb
-      DB_POSTGRESDB_HOST: evolution-postgres
+      DB_POSTGRESDB_HOST: postgres # <--- CORREÇÃO: Atualizado
       DB_POSTGRESDB_PORT: 5432
       DB_POSTGRESDB_USER: root
       DB_POSTGRESDB_PASSWORD: root
-      # --- CORREÇÃO AQUI ---
-      # Altera o nome do banco para não conflitar com a Evolution API
-      DB_POSTGRESDB_DATABASE: n8n_db
+      DB_POSTGRESDB_DATABASE: n8n_db # Mantém o banco separado
       QUEUE_BULL_REDIS_HOST: evolution-redis
       QUEUE_BULL_REDIS_PORT: 6379
 
 # --------------------------------------------
 # Volumes e rede
-# --------------------------------------------
+# ----------------------------
 volumes:
   evolution_postgres_data:
   evolution_instances:
