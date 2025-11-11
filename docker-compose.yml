@@ -68,8 +68,6 @@ services:
     container_name: evolution-api
     restart: on-failure
     depends_on:
-      postgres: # <--- CORREÇÃO: Atualizado
-        condition: service_healthy
       evolution-redis:
         condition: service_started
     networks:
@@ -81,24 +79,21 @@ services:
       PORT: 8080
       LOG_LEVEL: info
 
-      # Banco de dados
-      DATABASE_PROVIDER: postgresql
-      DATABASE_HOST: postgres # <--- CORREÇÃO: Atualizado
-      DATABASE_PORT: 5432
-      DATABASE_USER: root
-      DATABASE_PASSWORD: root
-      DATABASE_NAME: rotacomercial
-      DATABASE_URL: postgresql://root:root@postgres:5432/rotacomercial # <--- CORREÇÃO: Atualizado
+      # Desabilita banco de dados (usa arquivo local)
+      DATABASE_ENABLED: "false"
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "true"
+      DATABASE_SAVE_MESSAGE_UPDATE: "true"
+      DATABASE_SAVE_DATA_CONTACTS: "true"
+      DATABASE_SAVE_DATA_CHATS: "true"
 
       # Redis
       REDIS_ENABLED: "true"
-      REDIS_URL: redis://default:@evolution-redis:6379/0
+      REDIS_URI: redis://evolution-redis:6379/0
 
       # API / Autenticação
       SERVER_URL: http://69.62.101.194:8080
-      EVOLUTION_API_URL: http://69.62.101.194:8080
-      AUTHENTICATION_API_KEY: fa659dd1045ded2dd5afbb04b46a44bc1318375cd87140b761f5efb59fafb469
-      USE_AUTHENTICATION_BEARER: "true"
+      AUTHENTICATION_API_KEY: bd91e32e9750424f9983e63bd1382cfeec7e64bae0deea8fb2e9ab60066c83e0
 
       # Webhook / CORS
       WEBHOOK_GLOBAL_ENABLED: "false"
@@ -148,7 +143,7 @@ services:
     container_name: n8n
     restart: always
     depends_on:
-      postgres: # <--- CORREÇÃO: Atualizado
+      postgres:
         condition: service_healthy
       evolution-redis:
         condition: service_started
@@ -163,14 +158,17 @@ services:
       N8N_PROTOCOL: http
       N8N_SECURE_COOKIE: false
       WEBHOOK_URL: http://69.62.101.194:5678/
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "false"
       DB_TYPE: postgresdb
-      DB_POSTGRESDB_HOST: postgres # <--- CORREÇÃO: Atualizado
+      DB_POSTGRESDB_HOST: postgres
       DB_POSTGRESDB_PORT: 5432
       DB_POSTGRESDB_USER: root
       DB_POSTGRESDB_PASSWORD: root
-      DB_POSTGRESDB_DATABASE: n8n_db # Mantém o banco separado
+      DB_POSTGRESDB_DATABASE: n8n_db
       QUEUE_BULL_REDIS_HOST: evolution-redis
       QUEUE_BULL_REDIS_PORT: 6379
+    volumes:
+      - n8n_data:/home/node/.n8n
 
 # --------------------------------------------
 # Volumes e rede
@@ -179,6 +177,7 @@ volumes:
   evolution_postgres_data:
   evolution_instances:
   evolution_store:
+  n8n_data:
 
 networks:
   evolution_net:
