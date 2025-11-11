@@ -15,6 +15,7 @@ services:
       POSTGRES_DB: rotacomercial
     volumes:
       - evolution_postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     networks:
       - evolution_net
     ports:
@@ -150,7 +151,7 @@ services:
 
 # --------------------------------------------
 # Volumes e rede
-# ----------------------------
+# --------------------------------------------
 volumes:
   evolution_postgres_data:
   evolution_instances:
@@ -158,4 +159,5 @@ volumes:
 
 networks:
   evolution_net:
-    driver: bridge
+    external: true
+    name: coolify
