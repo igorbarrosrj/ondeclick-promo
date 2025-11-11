@@ -33,16 +33,23 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 
+# Instala postgresql-client para rodar migrations
+RUN apk add --no-cache postgresql-client
+
 RUN addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nodejs
 
 # Copia apenas o essencial para produção
 COPY --from=builder --chown=nodejs:nodejs /app/backend/dist ./backend/dist
+COPY --from=builder --chown=nodejs:nodejs /app/backend/sql ./backend/sql
 COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+
+# Copia e torna executável o script de entrypoint
+COPY --chmod=755 backend/docker-entrypoint.sh /app/docker-entrypoint.sh
 
 USER nodejs
 
 EXPOSE 3000
 
-CMD ["node", "backend/dist/server.js"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]

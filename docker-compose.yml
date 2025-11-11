@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   # --------------------------------------------
   # 🟢 PostgreSQL (Banco de dados principal)
@@ -13,9 +11,10 @@ services:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
       POSTGRES_DB: rotacomercial
+      POSTGRES_MULTIPLE_DATABASES: n8n_db
     volumes:
       - evolution_postgres_data:/var/lib/postgresql/data
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - ./init-multiple-databases.sh:/docker-entrypoint-initdb.d/init-multiple-databases.sh
     networks:
       - evolution_net
     ports:
@@ -39,15 +38,37 @@ services:
       - "6379:6379"
 
   # --------------------------------------------
+  # 🟠 Backend (Fastify API)
+  # --------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: backend
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      evolution-redis:
+        condition: service_started
+    networks:
+      - evolution_net
+    ports:
+      - "4000:3000"
+    env_file:
+      - .env.dokploy
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+
+  # --------------------------------------------
   # 🟡 Evolution API
   # --------------------------------------------
   evolution-api:
-    image: atendai/evolution-api:latest
+    image: atendai/evolution-api:v2.1.1
     container_name: evolution-api
-    restart: on-failure
+    restart: always
     depends_on:
-      postgres: # <--- CORREÇÃO: Atualizado
-        condition: service_healthy
       evolution-redis:
         condition: service_started
     networks:
@@ -55,34 +76,37 @@ services:
     ports:
       - "8080:8080"
     environment:
-      NODE_ENV: production
-      PORT: 8080
-      LOG_LEVEL: info
+      # Server
+      SERVER_TYPE: http
+      SERVER_PORT: 8080
+      SERVER_URL: http://69.62.101.194:8080
 
-      # Banco de dados
-      DATABASE_PROVIDER: postgresql
-      DATABASE_HOST: postgres # <--- CORREÇÃO: Atualizado
-      DATABASE_PORT: 5432
-      DATABASE_USER: root
-      DATABASE_PASSWORD: root
-      DATABASE_NAME: rotacomercial
-      DATABASE_URL: postgresql://root:root@postgres:5432/rotacomercial # <--- CORREÇÃO: Atualizado
+      # Cors
+      CORS_ORIGIN: "*"
+      CORS_METHODS: GET,POST,PUT,DELETE
+      CORS_CREDENTIALS: "true"
+
+      # Log
+      LOG_LEVEL: ERROR
+      LOG_COLOR: "true"
+
+      # Database desabilitado - SEM PROVIDER
+      DATABASE_ENABLED: "false"
+      DATABASE_SAVE_DATA_INSTANCE: "false"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "false"
+      DATABASE_SAVE_MESSAGE_UPDATE: "false"
+      DATABASE_SAVE_DATA_CONTACTS: "false"
+      DATABASE_SAVE_DATA_CHATS: "false"
 
       # Redis
       REDIS_ENABLED: "true"
-      REDIS_URL: redis://default:@evolution-redis:6379/0
+      REDIS_URI: redis://evolution-redis:6379
+      REDIS_PREFIX_KEY: evolution
 
-      # API / Autenticação
-      SERVER_URL: http://69.62.101.194:8080
-      EVOLUTION_API_URL: http://69.62.101.194:8080
-      AUTHENTICATION_API_KEY: fa659dd1045ded2dd5afbb04b46a44bc1318375cd87140b761f5efb59fafb469
-      USE_AUTHENTICATION_BEARER: "true"
-
-      # Webhook / CORS
-      WEBHOOK_GLOBAL_ENABLED: "false"
-      CORS_ORIGIN: "*"
-      CORS_METHODS: POST,GET,PUT,DELETE
-      CORS_CREDENTIALS: "true"
+      # Authentication
+      AUTHENTICATION_TYPE: apikey
+      AUTHENTICATION_API_KEY: bd91e32e9750424f9983e63bd1382cfeec7e64bae0deea8fb2e9ab60066c83e0
+      AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES: "true"
 
     volumes:
       - evolution_instances:/evolution/instances
@@ -101,6 +125,7 @@ services:
     container_name: frontend
     restart: always
     depends_on:
+      - backend
       - evolution-api
     networks:
       - evolution_net
@@ -125,7 +150,7 @@ services:
     container_name: n8n
     restart: always
     depends_on:
-      postgres: # <--- CORREÇÃO: Atualizado
+      postgres:
         condition: service_healthy
       evolution-redis:
         condition: service_started
@@ -140,14 +165,17 @@ services:
       N8N_PROTOCOL: http
       N8N_SECURE_COOKIE: false
       WEBHOOK_URL: http://69.62.101.194:5678/
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "false"
       DB_TYPE: postgresdb
-      DB_POSTGRESDB_HOST: postgres # <--- CORREÇÃO: Atualizado
+      DB_POSTGRESDB_HOST: postgres
       DB_POSTGRESDB_PORT: 5432
       DB_POSTGRESDB_USER: root
       DB_POSTGRESDB_PASSWORD: root
-      DB_POSTGRESDB_DATABASE: n8n_db # Mantém o banco separado
+      DB_POSTGRESDB_DATABASE: n8n_db
       QUEUE_BULL_REDIS_HOST: evolution-redis
       QUEUE_BULL_REDIS_PORT: 6379
+    volumes:
+      - n8n_data:/home/node/.n8n
 
 # --------------------------------------------
 # Volumes e rede
@@ -156,8 +184,8 @@ volumes:
   evolution_postgres_data:
   evolution_instances:
   evolution_store:
+  n8n_data:
 
 networks:
   evolution_net:
-    external: true
-    name: coolify
+    driver: bridge
