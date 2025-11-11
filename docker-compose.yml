@@ -159,5 +159,4 @@ volumes:
 
 networks:
   evolution_net:
-    external: true
-    name: coolify
+    driver: bridge
