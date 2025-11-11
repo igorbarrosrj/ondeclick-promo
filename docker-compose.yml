@@ -69,6 +69,8 @@ services:
     container_name: evolution-api
     restart: always
     depends_on:
+      postgres:
+        condition: service_healthy
       evolution-redis:
         condition: service_started
     networks:
@@ -81,22 +83,15 @@ services:
       SERVER_PORT: 8080
       SERVER_URL: http://69.62.101.194:8080
 
-      # Cors
-      CORS_ORIGIN: "*"
-      CORS_METHODS: GET,POST,PUT,DELETE
-      CORS_CREDENTIALS: "true"
-
-      # Log
-      LOG_LEVEL: ERROR
-      LOG_COLOR: "true"
-
-      # Database desabilitado - SEM PROVIDER
-      DATABASE_ENABLED: "false"
-      DATABASE_SAVE_DATA_INSTANCE: "false"
-      DATABASE_SAVE_DATA_NEW_MESSAGE: "false"
-      DATABASE_SAVE_MESSAGE_UPDATE: "false"
-      DATABASE_SAVE_DATA_CONTACTS: "false"
-      DATABASE_SAVE_DATA_CHATS: "false"
+      # Database COM PostgreSQL
+      DATABASE_ENABLED: "true"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://root:root@postgres:5432/rotacomercial
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "true"
+      DATABASE_SAVE_MESSAGE_UPDATE: "true"
+      DATABASE_SAVE_DATA_CONTACTS: "true"
+      DATABASE_SAVE_DATA_CHATS: "true"
 
       # Redis
       REDIS_ENABLED: "true"
@@ -106,7 +101,15 @@ services:
       # Authentication
       AUTHENTICATION_TYPE: apikey
       AUTHENTICATION_API_KEY: bd91e32e9750424f9983e63bd1382cfeec7e64bae0deea8fb2e9ab60066c83e0
-      AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES: "true"
+
+      # Cors
+      CORS_ORIGIN: "*"
+      CORS_METHODS: GET,POST,PUT,DELETE
+      CORS_CREDENTIALS: "true"
+
+      # Log
+      LOG_LEVEL: ERROR
+      LOG_COLOR: "true"
 
     volumes:
       - evolution_instances:/evolution/instances
