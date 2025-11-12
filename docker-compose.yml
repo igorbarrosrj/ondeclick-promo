@@ -58,9 +58,9 @@ services:
     env_file:
       - .env.dokploy
     extra_hosts:
-      - "postgres:172.19.0.5"
-      - "redis:172.19.0.4"
-      - "evolution-redis:172.19.0.4"
+      - "postgres:172.19.0.2"
+      - "redis:172.19.0.3"
+      - "evolution-redis:172.19.0.3"
 
   # --------------------------------------------
   # 🟡 Evolution API (COM PostgreSQL + Redis)
@@ -120,9 +120,9 @@ services:
       - evolution_instances:/evolution/instances
       - evolution_store:/evolution/store
     extra_hosts:
-      - "postgres:172.19.0.5"
-      - "redis:172.19.0.4"
-      - "evolution-redis:172.19.0.4"
+      - "postgres:172.19.0.2"
+      - "redis:172.19.0.3"
+      - "evolution-redis:172.19.0.3"
 
   # --------------------------------------------
   # 🟣 Frontend (Next.js)
@@ -181,9 +181,9 @@ services:
     volumes:
       - n8n_data:/home/node/.n8n
     extra_hosts:
-      - "postgres:172.19.0.5"
-      - "redis:172.19.0.4"
-      - "evolution-redis:172.19.0.4"
+      - "postgres:172.19.0.2"
+      - "redis:172.19.0.3"
+      - "evolution-redis:172.19.0.3"
 
 # --------------------------------------------
 # Volumes e rede
