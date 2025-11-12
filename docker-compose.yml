@@ -16,7 +16,6 @@ services:
       - ./init-multiple-databases.sh:/docker-entrypoint-initdb.d/init-multiple-databases.sh
     networks:
       - evolution_net
-      - coolify
     ports:
       - "5433:5432"
     healthcheck:
@@ -63,13 +62,15 @@ services:
       - 1.1.1.1
 
   # --------------------------------------------
-  # 🟡 Evolution API (SEM BANCO - Só Redis)
+  # 🟡 Evolution API (COM PostgreSQL + Redis)
   # --------------------------------------------
   evolution-api:
     image: atendai/evolution-api:v2.1.1
     container_name: evolution-api
     restart: always
     depends_on:
+      postgres:
+        condition: service_healthy
       evolution-redis:
         condition: service_started
     networks:
@@ -91,14 +92,18 @@ services:
       LOG_LEVEL: ERROR
       LOG_COLOR: "true"
 
-      # Database DESABILITADO - SEM PROVIDER
-      DATABASE_ENABLED: "false"
-      DATABASE_PROVIDER: ""
-      DATABASE_SAVE_DATA_INSTANCE: "false"
-      DATABASE_SAVE_DATA_NEW_MESSAGE: "false"
-      DATABASE_SAVE_MESSAGE_UPDATE: "false"
-      DATABASE_SAVE_DATA_CONTACTS: "false"
-      DATABASE_SAVE_DATA_CHATS: "false"
+      # Database HABILITADO com PostgreSQL
+      DATABASE_ENABLED: "true"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://root:root@postgres:5432/rotacomercial?schema=public
+      DATABASE_CONNECTION_CLIENT_NAME: evolution_exchange
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "true"
+      DATABASE_SAVE_MESSAGE_UPDATE: "true"
+      DATABASE_SAVE_DATA_CONTACTS: "true"
+      DATABASE_SAVE_DATA_CHATS: "true"
+      DATABASE_SAVE_DATA_LABELS: "true"
+      DATABASE_SAVE_DATA_HISTORIC: "true"
 
       # Redis
       REDIS_ENABLED: "true"
@@ -192,5 +197,3 @@ volumes:
 networks:
   evolution_net:
     driver: bridge
-  coolify:
-    external: true
