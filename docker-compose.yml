@@ -4,7 +4,7 @@ services:
   # --------------------------------------------
   postgres:
     image: postgres:15-alpine
-    container_name: evolution-postgres
+    container_name: postgres
     restart: always
     environment:
       POSTGRES_USER: root
@@ -30,7 +30,7 @@ services:
   # --------------------------------------------
   evolution-redis:
     image: redis:alpine
-    container_name: evolution-redis
+    container_name: redis
     restart: always
     networks:
       - evolution_net
@@ -57,18 +57,21 @@ services:
       - "4000:3000"
     env_file:
       - .env.dokploy
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
+    extra_hosts:
+      - "postgres:172.19.0.5"
+      - "redis:172.19.0.4"
+      - "evolution-redis:172.19.0.4"
 
   # --------------------------------------------
-  # 🟡 Evolution API (SEM BANCO - Só Redis)
+  # 🟡 Evolution API (COM PostgreSQL + Redis)
   # --------------------------------------------
   evolution-api:
     image: atendai/evolution-api:v2.1.1
     container_name: evolution-api
     restart: always
     depends_on:
+      postgres:
+        condition: service_healthy
       evolution-redis:
         condition: service_started
     networks:
@@ -90,13 +93,18 @@ services:
       LOG_LEVEL: ERROR
       LOG_COLOR: "true"
 
-      # Database DESABILITADO - SEM PROVIDER
-      DATABASE_ENABLED: "false"
-      DATABASE_SAVE_DATA_INSTANCE: "false"
-      DATABASE_SAVE_DATA_NEW_MESSAGE: "false"
-      DATABASE_SAVE_MESSAGE_UPDATE: "false"
-      DATABASE_SAVE_DATA_CONTACTS: "false"
-      DATABASE_SAVE_DATA_CHATS: "false"
+      # Database HABILITADO com PostgreSQL
+      DATABASE_ENABLED: "true"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://root:root@postgres:5432/rotacomercial?schema=public
+      DATABASE_CONNECTION_CLIENT_NAME: evolution_exchange
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "true"
+      DATABASE_SAVE_MESSAGE_UPDATE: "true"
+      DATABASE_SAVE_DATA_CONTACTS: "true"
+      DATABASE_SAVE_DATA_CHATS: "true"
+      DATABASE_SAVE_DATA_LABELS: "true"
+      DATABASE_SAVE_DATA_HISTORIC: "true"
 
       # Redis
       REDIS_ENABLED: "true"
@@ -111,9 +119,10 @@ services:
     volumes:
       - evolution_instances:/evolution/instances
       - evolution_store:/evolution/store
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
+    extra_hosts:
+      - "postgres:172.19.0.5"
+      - "redis:172.19.0.4"
+      - "evolution-redis:172.19.0.4"
 
   # --------------------------------------------
   # 🟣 Frontend (Next.js)
@@ -136,9 +145,6 @@ services:
       - "3010:3000"
     env_file:
       - .env.dokploy
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
 
   # --------------------------------------------
   # 🔵 N8N (Automação)
@@ -174,6 +180,10 @@ services:
       QUEUE_BULL_REDIS_PORT: 6379
     volumes:
       - n8n_data:/home/node/.n8n
+    extra_hosts:
+      - "postgres:172.19.0.5"
+      - "redis:172.19.0.4"
+      - "evolution-redis:172.19.0.4"
 
 # --------------------------------------------
 # Volumes e rede
