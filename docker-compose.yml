@@ -16,6 +16,7 @@ services:
       - ./init-multiple-databases.sh:/docker-entrypoint-initdb.d/init-multiple-databases.sh
     networks:
       - evolution_net
+      - coolify
     ports:
       - "5433:5432"
     healthcheck:
@@ -92,6 +93,7 @@ services:
 
       # Database DESABILITADO - SEM PROVIDER
       DATABASE_ENABLED: "false"
+      DATABASE_PROVIDER: ""
       DATABASE_SAVE_DATA_INSTANCE: "false"
       DATABASE_SAVE_DATA_NEW_MESSAGE: "false"
       DATABASE_SAVE_MESSAGE_UPDATE: "false"
@@ -174,6 +176,9 @@ services:
       QUEUE_BULL_REDIS_PORT: 6379
     volumes:
       - n8n_data:/home/node/.n8n
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
 
 # --------------------------------------------
 # Volumes e rede
@@ -187,3 +192,5 @@ volumes:
 networks:
   evolution_net:
     driver: bridge
+  coolify:
+    external: true
