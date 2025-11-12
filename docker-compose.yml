@@ -59,6 +59,7 @@ services:
       - .env.dokploy
     extra_hosts:
       - "postgres:172.19.0.5"
+      - "redis:172.19.0.4"
       - "evolution-redis:172.19.0.4"
 
   # --------------------------------------------
@@ -120,6 +121,7 @@ services:
       - evolution_store:/evolution/store
     extra_hosts:
       - "postgres:172.19.0.5"
+      - "redis:172.19.0.4"
       - "evolution-redis:172.19.0.4"
 
   # --------------------------------------------
@@ -180,6 +182,7 @@ services:
       - n8n_data:/home/node/.n8n
     extra_hosts:
       - "postgres:172.19.0.5"
+      - "redis:172.19.0.4"
       - "evolution-redis:172.19.0.4"
 
 # --------------------------------------------
