@@ -4,7 +4,7 @@ services:
   # --------------------------------------------
   postgres:
     image: postgres:15-alpine
-    container_name: evolution-postgres
+    container_name: postgres
     restart: always
     environment:
       POSTGRES_USER: root
@@ -30,7 +30,7 @@ services:
   # --------------------------------------------
   evolution-redis:
     image: redis:alpine
-    container_name: evolution-redis
+    container_name: redis
     restart: always
     networks:
       - evolution_net
