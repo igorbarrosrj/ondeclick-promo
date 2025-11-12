@@ -57,9 +57,6 @@ services:
       - "4000:3000"
     env_file:
       - .env.dokploy
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
 
   # --------------------------------------------
   # 🟡 Evolution API (COM PostgreSQL + Redis)
@@ -118,9 +115,6 @@ services:
     volumes:
       - evolution_instances:/evolution/instances
       - evolution_store:/evolution/store
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
 
   # --------------------------------------------
   # 🟣 Frontend (Next.js)
@@ -143,9 +137,6 @@ services:
       - "3010:3000"
     env_file:
       - .env.dokploy
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
 
   # --------------------------------------------
   # 🔵 N8N (Automação)
@@ -181,9 +172,6 @@ services:
       QUEUE_BULL_REDIS_PORT: 6379
     volumes:
       - n8n_data:/home/node/.n8n
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
 
 # --------------------------------------------
 # Volumes e rede
