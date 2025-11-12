@@ -15,7 +15,8 @@ services:
       - evolution_postgres_data:/var/lib/postgresql/data
       - ./init-multiple-databases.sh:/docker-entrypoint-initdb.d/init-multiple-databases.sh
     networks:
-      - evolution_net
+      evolution_net:
+        ipv4_address: 172.19.0.2
     ports:
       - "5433:5432"
     healthcheck:
@@ -33,7 +34,8 @@ services:
     container_name: redis
     restart: always
     networks:
-      - evolution_net
+      evolution_net:
+        ipv4_address: 172.19.0.3
     ports:
       - "6379:6379"
 
@@ -197,3 +199,6 @@ volumes:
 networks:
   evolution_net:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.19.0.0/16
