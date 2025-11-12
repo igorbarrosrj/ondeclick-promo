@@ -57,6 +57,9 @@ services:
       - "4000:3000"
     env_file:
       - .env.dokploy
+    extra_hosts:
+      - "postgres:172.19.0.5"
+      - "evolution-redis:172.19.0.4"
 
   # --------------------------------------------
   # 🟡 Evolution API (COM PostgreSQL + Redis)
@@ -115,6 +118,9 @@ services:
     volumes:
       - evolution_instances:/evolution/instances
       - evolution_store:/evolution/store
+    extra_hosts:
+      - "postgres:172.19.0.5"
+      - "evolution-redis:172.19.0.4"
 
   # --------------------------------------------
   # 🟣 Frontend (Next.js)
@@ -172,6 +178,9 @@ services:
       QUEUE_BULL_REDIS_PORT: 6379
     volumes:
       - n8n_data:/home/node/.n8n
+    extra_hosts:
+      - "postgres:172.19.0.5"
+      - "evolution-redis:172.19.0.4"
 
 # --------------------------------------------
 # Volumes e rede
