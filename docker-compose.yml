@@ -1,7 +1,6 @@
 services:
   # --------------------------------------------
   # 🟢 PostgreSQL (Banco de dados principal)
-  # --- CORREÇÃO: Renomeado de 'evolution-postgres' para 'postgres' ---
   # --------------------------------------------
   postgres:
     image: postgres:15-alpine
@@ -21,9 +20,10 @@ services:
       - "5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U root -d rotacomercial"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
 
   # --------------------------------------------
   # 🔴 Redis (Cache e filas)
@@ -62,15 +62,13 @@ services:
       - 1.1.1.1
 
   # --------------------------------------------
-  # 🟡 Evolution API
+  # 🟡 Evolution API (SEM BANCO - Só Redis)
   # --------------------------------------------
   evolution-api:
     image: atendai/evolution-api:v2.1.1
     container_name: evolution-api
     restart: always
     depends_on:
-      postgres:
-        condition: service_healthy
       evolution-redis:
         condition: service_started
     networks:
@@ -83,15 +81,22 @@ services:
       SERVER_PORT: 8080
       SERVER_URL: http://69.62.101.194:8080
 
-      # Database COM PostgreSQL
-      DATABASE_ENABLED: "true"
-      DATABASE_PROVIDER: postgresql
-      DATABASE_CONNECTION_URI: postgresql://root:root@postgres:5432/rotacomercial
-      DATABASE_SAVE_DATA_INSTANCE: "true"
-      DATABASE_SAVE_DATA_NEW_MESSAGE: "true"
-      DATABASE_SAVE_MESSAGE_UPDATE: "true"
-      DATABASE_SAVE_DATA_CONTACTS: "true"
-      DATABASE_SAVE_DATA_CHATS: "true"
+      # Cors
+      CORS_ORIGIN: "*"
+      CORS_METHODS: GET,POST,PUT,DELETE
+      CORS_CREDENTIALS: "true"
+
+      # Log
+      LOG_LEVEL: ERROR
+      LOG_COLOR: "true"
+
+      # Database DESABILITADO - SEM PROVIDER
+      DATABASE_ENABLED: "false"
+      DATABASE_SAVE_DATA_INSTANCE: "false"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "false"
+      DATABASE_SAVE_MESSAGE_UPDATE: "false"
+      DATABASE_SAVE_DATA_CONTACTS: "false"
+      DATABASE_SAVE_DATA_CHATS: "false"
 
       # Redis
       REDIS_ENABLED: "true"
@@ -101,15 +106,7 @@ services:
       # Authentication
       AUTHENTICATION_TYPE: apikey
       AUTHENTICATION_API_KEY: bd91e32e9750424f9983e63bd1382cfeec7e64bae0deea8fb2e9ab60066c83e0
-
-      # Cors
-      CORS_ORIGIN: "*"
-      CORS_METHODS: GET,POST,PUT,DELETE
-      CORS_CREDENTIALS: "true"
-
-      # Log
-      LOG_LEVEL: ERROR
-      LOG_COLOR: "true"
+      AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES: "true"
 
     volumes:
       - evolution_instances:/evolution/instances
@@ -125,6 +122,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+      args:
+        NEXT_PUBLIC_APP_URL: http://69.62.101.194:3010
+        NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY: ""
     container_name: frontend
     restart: always
     depends_on:
@@ -134,13 +134,8 @@ services:
       - evolution_net
     ports:
       - "3010:3000"
-    environment:
-      NODE_ENV: production
-      NEXT_DISABLE_FONT_DOWNLOADS: "1"
-      NEXT_PUBLIC_APP_URL: http://69.62.101.194:3010
-      NEXT_PUBLIC_SUPABASE_URL: ""
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ""
-      NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY: ""
+    env_file:
+      - .env.dokploy
     dns:
       - 8.8.8.8
       - 1.1.1.1
