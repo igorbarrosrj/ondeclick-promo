@@ -35,7 +35,7 @@ services:
     networks:
       - evolution_net
     ports:
-      - "6379:6379"
+      - "6381:6379"
 
   # --------------------------------------------
   # 🟠 Backend (Fastify API)
@@ -57,10 +57,6 @@ services:
       - "4000:3000"
     env_file:
       - .env.dokploy
-    extra_hosts:
-      - "postgres:172.19.0.5"
-      - "redis:172.19.0.4"
-      - "evolution-redis:172.19.0.4"
 
   # --------------------------------------------
   # 🟡 Evolution API (COM PostgreSQL + Redis)
@@ -96,7 +92,7 @@ services:
       # Database HABILITADO com PostgreSQL
       DATABASE_ENABLED: "true"
       DATABASE_PROVIDER: postgresql
-      DATABASE_CONNECTION_URI: postgresql://root:root@postgres:5432/rotacomercial?schema=public
+      DATABASE_CONNECTION_URI: postgresql://root:root@postgres:5432/rotacomercial?schema=evolution
       DATABASE_CONNECTION_CLIENT_NAME: evolution_exchange
       DATABASE_SAVE_DATA_INSTANCE: "true"
       DATABASE_SAVE_DATA_NEW_MESSAGE: "true"
@@ -108,7 +104,9 @@ services:
 
       # Redis
       REDIS_ENABLED: "true"
-      REDIS_URI: redis://evolution-redis:6379
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB_INDEX: 0
       REDIS_PREFIX_KEY: evolution
 
       # Authentication
@@ -119,10 +117,6 @@ services:
     volumes:
       - evolution_instances:/evolution/instances
       - evolution_store:/evolution/store
-    extra_hosts:
-      - "postgres:172.19.0.5"
-      - "redis:172.19.0.4"
-      - "evolution-redis:172.19.0.4"
 
   # --------------------------------------------
   # 🟣 Frontend (Next.js)
@@ -180,10 +174,6 @@ services:
       QUEUE_BULL_REDIS_PORT: 6379
     volumes:
       - n8n_data:/home/node/.n8n
-    extra_hosts:
-      - "postgres:172.19.0.5"
-      - "redis:172.19.0.4"
-      - "evolution-redis:172.19.0.4"
 
 # --------------------------------------------
 # Volumes e rede
@@ -197,3 +187,6 @@ volumes:
 networks:
   evolution_net:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
